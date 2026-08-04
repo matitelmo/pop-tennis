@@ -1,0 +1,62 @@
+export type SkillLevel = "beginner" | "intermediate" | "advanced" | "expert";
+
+export type MatchFormat = "1v1_bo3" | "1v1_bo5" | "2v2_bo3" | "2v2_bo5";
+
+export type SetScore = { p1: number; p2: number };
+
+export type Profile = {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+  skill_level: SkillLevel;
+  rating: number;
+  base_rating: number;
+  last_match_at: string;
+  last_decay_at: string | null;
+  created_at: string;
+};
+
+export type MatchStatus = "pending" | "counter_proposed" | "confirmed";
+
+export type Match = {
+  id: string;
+  format: MatchFormat;
+  set_scores: SetScore[];
+  winner_ids: string[];
+  loser_ids: string[];
+  rating_changes: Record<string, number> | null;
+  created_at: string;
+  status: MatchStatus;
+  submitted_by: string | null;
+  confirmed_by: string | null;
+  confirmation_deadline: string | null;
+  team1_ids: string[] | null;
+  team2_ids: string[] | null;
+  winning_team: 1 | 2 | null;
+  counter_set_scores: SetScore[] | null;
+  counter_winning_team: 1 | 2 | null;
+  counter_submitted_by: string | null;
+};
+
+export type MatchParticipant = {
+  match_id: string;
+  user_id: string;
+  team: "winner" | "loser";
+  rating_before: number;
+  rating_after: number;
+  rating_delta: number;
+};
+
+export type UserBadge = {
+  id: string;
+  user_id: string;
+  badge_code: string;
+  unlocked_at: string;
+};
+
+export type BadgeCode =
+  | "papa_del_grupo"
+  | "caza_gigantes"
+  | "paseo_en_coche"
+  | "inviolable"
+  | "lomo_de_metal";
