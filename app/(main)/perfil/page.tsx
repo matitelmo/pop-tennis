@@ -74,7 +74,9 @@ export default async function PerfilPage() {
       </div>
 
       <PlayerSearchList
-        players={entries.map((e) => ({ id: e.id, full_name: e.full_name }))}
+        players={entries
+          .filter((e) => !e.isUnclaimed)
+          .map((e) => ({ id: e.id, full_name: e.full_name }))}
         excludeId={profile.id}
         title="Ver perfil de..."
       />

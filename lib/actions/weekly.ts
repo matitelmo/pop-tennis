@@ -18,7 +18,9 @@ export async function getWeeklyStats(): Promise<WeeklyStats> {
   const weekStart = getWeekStart().toISOString();
 
   const { data: profiles } = await supabase.from("profiles").select("*");
+  const { data: roster } = await supabase.from("roster_players").select("id, claimed_by");
   const all = profiles ?? [];
+  const totalPlayers = roster?.length ?? all.length;
 
   const { data: weekMatches } = await supabase
     .from("matches")
@@ -37,7 +39,7 @@ export async function getWeeklyStats(): Promise<WeeklyStats> {
 
   return {
     totalMatches: weekMatches?.length ?? 0,
-    totalPlayers: all.length,
+    totalPlayers,
     playedThisWeek: playedIds.size,
     playedIds,
     notPlayed,
