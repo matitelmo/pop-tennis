@@ -1,7 +1,7 @@
 {
-  "name": "Pop Tennis",
-  "short_name": "Pop Tennis",
-  "description": "Ranking y gamificación para Pop Tennis",
+  "name": "Wild On Pop Tennis",
+  "short_name": "Wild On",
+  "description": "Ranking y gamificación para la banda de Pop Tennis",
   "start_url": "/ranking",
   "display": "standalone",
   "background_color": "#0a0e14",

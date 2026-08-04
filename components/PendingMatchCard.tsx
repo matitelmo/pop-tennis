@@ -6,9 +6,12 @@ import {
   confirmMatch,
   proposeCounterMatch,
   type PendingMatch,
+  type MatchRevealData,
 } from "@/lib/actions/match";
 import { ScoreControl } from "@/components/ScoreControl";
-import { useToast } from "@/components/ToastProvider";
+import { PointsReveal } from "@/components/PointsReveal";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { formatFormat } from "@/lib/utils";
 import type { SetScore } from "@/types/database";
 import { Check, Loader2, X } from "lucide-react";
@@ -20,15 +23,18 @@ type Props = {
 };
 
 export function PendingMatchCard({ match, profileNames, onDone }: Props) {
-  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [disputing, setDisputing] = useState(false);
+  const [reveal, setReveal] = useState<MatchRevealData | null>(null);
   const [counterScores, setCounterScores] = useState<SetScore[]>([...match.set_scores]);
   const [counterWinner, setCounterWinner] = useState<1 | 2>(match.winning_team as 1 | 2);
 
   const scoreStr = match.set_scores.map((s) => `${s.p1}-${s.p2}`).join(" · ");
   const deadline = new Date(match.confirmation_deadline);
+  const totalMs = 24 * 60 * 60 * 1000;
+  const elapsed = Date.now() - (deadline.getTime() - totalMs);
+  const progress = Math.min(100, Math.max(0, (elapsed / totalMs) * 100));
   const hoursLeft = Math.max(
     0,
     Math.round((deadline.getTime() - Date.now()) / (1000 * 60 * 60))
@@ -52,10 +58,8 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
     const res = await confirmMatch(match.id);
     setLoading(false);
     if (!res.success) setError(res.error ?? "Error");
-    else {
-      toast("Partido confirmado — ranking actualizado");
-      onDone();
-    }
+    else if (res.reveal) setReveal(res.reveal);
+    else onDone();
   }
 
   async function handleAcceptCounter() {
@@ -64,10 +68,8 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
     const res = await acceptCounterMatch(match.id);
     setLoading(false);
     if (!res.success) setError(res.error ?? "Error");
-    else {
-      toast("Contrapropuesta aceptada — ranking actualizado");
-      onDone();
-    }
+    else if (res.reveal) setReveal(res.reveal);
+    else onDone();
   }
 
   async function handleProposeCounter() {
@@ -79,132 +81,136 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
     });
     setLoading(false);
     if (!res.success) setError(res.error ?? "Error");
-    else {
-      toast("Contrapropuesta enviada");
-      onDone();
-    }
+    else onDone();
   }
 
   return (
-    <div className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-4">
-      <p className="text-xs font-bold uppercase text-amber-400">
-        {match.status === "counter_proposed"
-          ? "Contrapropuesta pendiente"
-          : "Confirmar resultado"}
-      </p>
-      <p className="mt-1 font-mono text-xl text-white">{scoreStr}</p>
-      <p className="text-sm text-zinc-400">
-        {winnerNames} vs {loserNames} · {formatFormat(match.format)}
-      </p>
-      <p
-        className={`mt-1 text-xs ${urgent ? "font-bold text-red-400" : "text-zinc-500"}`}
-      >
-        Cargado por {match.submitter_name} ·{" "}
-        {hoursLeft === 0 ? "Vence pronto" : `Quedan ${hoursLeft}h`}
-      </p>
+    <>
+      <Card className="border-warning/30 bg-warning/5">
+        <p className="text-xs font-bold uppercase text-warning">
+          {match.status === "counter_proposed"
+            ? "Contrapropuesta pendiente"
+            : "Confirmar resultado"}
+        </p>
+        <p className="mt-1 font-mono text-xl text-white">{scoreStr}</p>
+        <p className="text-body">
+          {winnerNames} vs {loserNames} · {formatFormat(match.format)}
+        </p>
 
-      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
-
-      {match.role === "needs_confirm" && !disputing && (
-        <div className="mt-4 flex gap-2">
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={loading}
-            className="flex min-h-[44px] flex-1 items-center justify-center gap-1 rounded-xl bg-lime-500 font-bold text-black disabled:opacity-50 active:scale-[0.98]"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4" />
-            )}
-            Confirmar
-          </button>
-          <button
-            type="button"
-            onClick={() => setDisputing(true)}
-            disabled={loading}
-            className="flex min-h-[44px] flex-1 items-center justify-center gap-1 rounded-xl border border-white/20 text-zinc-300 active:scale-[0.98]"
-          >
-            <X className="h-4 w-4" /> Otro resultado
-          </button>
-        </div>
-      )}
-
-      {match.role === "needs_accept_counter" && (
-        <button
-          type="button"
-          onClick={handleAcceptCounter}
-          disabled={loading}
-          className="mt-4 flex w-full min-h-[44px] items-center justify-center gap-2 rounded-xl bg-lime-500 font-bold text-black disabled:opacity-50 active:scale-[0.98]"
-        >
-          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-          Aceptar contrapropuesta
-        </button>
-      )}
-
-      {disputing && (
-        <div className="mt-4 space-y-3">
-          <p className="text-sm text-zinc-400">Proponé el resultado correcto:</p>
-          <div className="grid grid-cols-2 gap-2">
-            {([1, 2] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setCounterWinner(t)}
-                className={`min-h-[44px] rounded-lg border text-sm font-bold active:scale-[0.98] ${
-                  counterWinner === t
-                    ? "border-lime-400 text-lime-400"
-                    : "border-white/10 text-zinc-400"
-                }`}
-              >
-                Ganó Equipo {t}
-              </button>
-            ))}
-          </div>
-          {counterScores.map((set, i) => (
+        <div className="mt-3">
+          <div className="h-1.5 overflow-hidden rounded-full bg-surface-glass">
             <div
-              key={i}
-              className="flex items-center justify-between rounded-lg bg-black/20 px-3 py-2"
-            >
-              <span className="text-sm text-zinc-400">Set {i + 1}</span>
-              <div className="flex items-center gap-2">
-                <ScoreControl
-                  label="Eq1"
-                  value={set.p1}
-                  onDec={() => updateCounterSet(i, "p1", -1)}
-                  onInc={() => updateCounterSet(i, "p1", 1)}
-                />
-                <span className="text-zinc-600">-</span>
-                <ScoreControl
-                  label="Eq2"
-                  value={set.p2}
-                  onDec={() => updateCounterSet(i, "p2", -1)}
-                  onInc={() => updateCounterSet(i, "p2", 1)}
-                />
-              </div>
-            </div>
-          ))}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setDisputing(false)}
-              className="min-h-[44px] flex-1 rounded-xl border border-white/10 text-sm text-zinc-300"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleProposeCounter}
-              disabled={loading}
-              className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 font-bold text-black disabled:opacity-50 active:scale-[0.98]"
-            >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Enviar
-            </button>
+              className={`h-full rounded-full transition-all ${urgent ? "bg-danger" : "bg-warning"}`}
+              style={{ width: `${progress}%` }}
+            />
           </div>
+          <p className={`mt-1 text-caption ${urgent ? "font-bold text-danger" : ""}`}>
+            Cargado por {match.submitter_name} ·{" "}
+            {hoursLeft === 0 ? "Vence pronto" : `Quedan ${hoursLeft}h`}
+          </p>
         </div>
+
+        {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+
+        {match.role === "needs_confirm" && !disputing && (
+          <div className="mt-4 flex gap-2">
+            <Button
+              type="button"
+              onClick={handleConfirm}
+              disabled={loading}
+              className="flex-1"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              Confirmar
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setDisputing(true)}
+              disabled={loading}
+              className="flex-1"
+            >
+              <X className="h-4 w-4" /> Otro resultado
+            </Button>
+          </div>
+        )}
+
+        {match.role === "needs_accept_counter" && (
+          <Button
+            type="button"
+            onClick={handleAcceptCounter}
+            disabled={loading}
+            className="mt-4 w-full"
+          >
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            Aceptar contrapropuesta
+          </Button>
+        )}
+
+        {disputing && (
+          <div className="mt-4 space-y-3">
+            <p className="text-body">Proponé el resultado correcto:</p>
+            <div className="grid grid-cols-2 gap-2">
+              {([1, 2] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setCounterWinner(t)}
+                  className={`min-h-[44px] rounded-lg border text-sm font-bold active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    counterWinner === t
+                      ? "border-accent text-accent"
+                      : "border-border text-zinc-400"
+                  }`}
+                >
+                  Ganó Equipo {t}
+                </button>
+              ))}
+            </div>
+            {counterScores.map((set, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-lg bg-surface-glass px-3 py-2"
+              >
+                <span className="text-sm text-zinc-400">Set {i + 1}</span>
+                <div className="flex items-center gap-2">
+                  <ScoreControl
+                    label="Eq1"
+                    value={set.p1}
+                    onDec={() => updateCounterSet(i, "p1", -1)}
+                    onInc={() => updateCounterSet(i, "p1", 1)}
+                  />
+                  <span className="text-zinc-600">-</span>
+                  <ScoreControl
+                    label="Eq2"
+                    value={set.p2}
+                    onDec={() => updateCounterSet(i, "p2", -1)}
+                    onInc={() => updateCounterSet(i, "p2", 1)}
+                  />
+                </div>
+              </div>
+            ))}
+            <div className="flex gap-2">
+              <Button type="button" variant="secondary" onClick={() => setDisputing(false)} className="flex-1">
+                Cancelar
+              </Button>
+              <Button type="button" onClick={handleProposeCounter} disabled={loading} className="flex-1 bg-warning text-accent-foreground hover:bg-warning/90">
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                Enviar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {reveal && (
+        <PointsReveal
+          {...reveal}
+          onClose={() => {
+            setReveal(null);
+            onDone();
+          }}
+        />
       )}
-    </div>
+    </>
   );
 }

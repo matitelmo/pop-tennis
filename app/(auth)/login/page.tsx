@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Trophy, AlertCircle } from "lucide-react";
 import { login } from "@/lib/actions/auth";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input, Label } from "@/components/ui/Input";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -19,52 +23,47 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-[#121820] p-8 shadow-2xl">
+    <Card variant="elevated" className="rounded-3xl p-8">
       <div className="mb-8 text-center">
-        <span className="text-4xl">🎾</span>
-        <h1 className="mt-2 text-2xl font-black text-white">Pop Tennis</h1>
-        <p className="text-sm text-zinc-400">Ranking & Gamification</p>
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-muted">
+          <Trophy className="h-8 w-8 text-accent" />
+        </div>
+        <h1 className="mt-4 text-display">Wild On Pop Tennis</h1>
+        <p className="mt-1 text-caption">Ranking de la banda</p>
       </div>
 
       <form action={handleSubmit} className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm text-zinc-400">Email</label>
-          <input
-            name="email"
-            type="email"
-            required
-            className="w-full min-h-[48px] rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none focus:border-lime-400"
-          />
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" name="email" type="email" required autoComplete="email" />
         </div>
         <div>
-          <label className="mb-1 block text-sm text-zinc-400">Contraseña</label>
-          <input
+          <Label htmlFor="password">Contraseña</Label>
+          <Input
+            id="password"
             name="password"
             type="password"
             required
-            className="w-full min-h-[48px] rounded-xl border border-white/10 bg-white/5 px-4 text-white outline-none focus:border-lime-400"
+            autoComplete="current-password"
           />
         </div>
         {error && (
-          <p className="rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {error}
-          </p>
+          <div className="flex items-start gap-2 rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
         )}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full min-h-[52px] rounded-xl bg-lime-500 font-bold text-black disabled:opacity-50"
-        >
+        <Button type="submit" disabled={loading} className="w-full" size="lg">
           {loading ? "Entrando..." : "Ingresar"}
-        </button>
+        </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-zinc-400">
+      <p className="mt-6 text-center text-caption">
         ¿No tenés cuenta?{" "}
-        <Link href="/register" className="font-bold text-lime-400">
+        <Link href="/register" className="font-bold text-accent">
           Registrate
         </Link>
       </p>
-    </div>
+    </Card>
   );
 }

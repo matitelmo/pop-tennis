@@ -11,6 +11,32 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        surface: {
+          DEFAULT: "var(--surface)",
+          elevated: "var(--surface-elevated)",
+          nav: "var(--surface-nav)",
+          glass: "var(--surface-glass)",
+        },
+        border: {
+          subtle: "var(--border-subtle)",
+          DEFAULT: "var(--border-default)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          muted: "var(--accent-muted)",
+          foreground: "var(--accent-foreground)",
+        },
+        success: "var(--success)",
+        warning: "var(--warning)",
+        danger: "var(--danger)",
+      },
+      borderRadius: {
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+      },
+      fontFamily: {
+        sans: ["var(--font-dm-sans)", "system-ui", "-apple-system", "sans-serif"],
       },
     },
   },

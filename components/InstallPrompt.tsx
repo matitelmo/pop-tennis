@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 
 export function InstallPrompt() {
   const [show, setShow] = useState(false);
@@ -12,6 +14,7 @@ export function InstallPrompt() {
 
   useEffect(() => {
     if (localStorage.getItem("pwa-dismissed")) return;
+    if (!localStorage.getItem("pop-first-run-done")) return;
 
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (!isMobile) return;
@@ -30,7 +33,11 @@ export function InstallPrompt() {
     window.addEventListener("beforeinstallprompt", handler);
 
     if (ios && !(window.navigator as Navigator & { standalone?: boolean }).standalone) {
-      setShow(true);
+      const timer = setTimeout(() => setShow(true), 500);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener("beforeinstallprompt", handler);
+      };
     }
 
     return () => window.removeEventListener("beforeinstallprompt", handler);
@@ -51,34 +58,30 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="mb-4 rounded-2xl border border-lime-400/20 bg-lime-400/10 p-4">
+    <Card className="mb-4 border-accent/20 bg-accent-muted">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
-          <p className="font-bold text-white">Instalá Pop Tennis</p>
-          <p className="mt-1 text-xs text-zinc-400">
+          <p className="font-bold text-white">Instalá Wild On Pop Tennis</p>
+          <p className="mt-1 text-caption">
             {isIOS
               ? "Safari → Compartir → Agregar a inicio de pantalla"
               : "Accedé al ranking al toque desde tu pantalla de inicio"}
           </p>
           {!isIOS && deferredPrompt && (
-            <button
-              type="button"
-              onClick={install}
-              className="mt-3 min-h-[44px] rounded-xl bg-lime-500 px-4 text-sm font-bold text-black active:scale-[0.98]"
-            >
+            <Button type="button" onClick={install} className="mt-3" size="sm">
               Instalar app
-            </button>
+            </Button>
           )}
         </div>
         <button
           type="button"
           onClick={dismiss}
-          className="flex min-h-[44px] min-w-[44px] items-center justify-center text-zinc-500"
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           aria-label="Cerrar"
         >
           <X className="h-5 w-5" />
         </button>
       </div>
-    </div>
+    </Card>
   );
 }

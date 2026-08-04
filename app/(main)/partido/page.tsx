@@ -3,6 +3,7 @@ import { getCurrentUserProfile } from "@/lib/actions/auth";
 import { getPendingMatchesForUser, getAllProfiles } from "@/lib/actions/match";
 import { MatchWizard } from "@/components/MatchWizard";
 import { PendingMatchesBanner } from "@/components/PendingMatchesBanner";
+import { AppHeader } from "@/components/AppHeader";
 
 export default async function PartidoPage() {
   const profile = await getCurrentUserProfile();
@@ -19,10 +20,10 @@ export default async function PartidoPage() {
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-black text-white">Cargar Partido</h1>
-        <p className="text-sm text-zinc-400">Registrá el resultado y mirá el impacto en pts</p>
-      </header>
+      <AppHeader
+        title="Cargar Partido"
+        subtitle="Registrá el resultado y mirá el impacto en pts"
+      />
 
       {actionable.length > 0 && (
         <div className="mb-6">

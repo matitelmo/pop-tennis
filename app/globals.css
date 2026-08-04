@@ -5,16 +5,115 @@
 :root {
   --background: #0a0e14;
   --foreground: #f4f4f5;
+  --surface: #121820;
+  --surface-elevated: #1a2332;
+  --surface-nav: #0f1419;
+  --surface-glass: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --accent: #84cc16;
+  --accent-muted: rgba(132, 204, 22, 0.12);
+  --accent-foreground: #0a0e14;
+  --success: #a3e635;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: system-ui, -apple-system, sans-serif;
 }
 
 @layer utilities {
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .text-display {
+    @apply text-2xl font-black tracking-tight text-white;
+  }
+
+  .text-title {
+    @apply text-xl font-bold text-white;
+  }
+
+  .text-body {
+    @apply text-sm text-zinc-300;
+  }
+
+  .text-caption {
+    @apply text-xs text-zinc-500;
+  }
+}
+
+@layer components {
+  .accent-line-top {
+    @apply relative overflow-hidden;
+  }
+
+  .accent-line-top::before {
+    content: "";
+    @apply absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-accent to-transparent;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes slide-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.animate-slide-up-in {
+  animation: slide-up-in 0.3s ease-out forwards;
+}
+
+.animate-slide-up-out {
+  animation: slide-up-out 0.3s ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer,
+  .animate-slide-up-in,
+  .animate-slide-up-out {
+    animation: none;
   }
 }

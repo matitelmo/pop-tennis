@@ -14,6 +14,20 @@ export type Profile = {
   last_match_at: string;
   last_decay_at: string | null;
   created_at: string;
+  roster_player_id: string | null;
+  last_seen_rank: number | null;
+  last_seen_at: string | null;
+};
+
+export type RosterPlayer = {
+  id: string;
+  display_name: string;
+  suggested_skill_level: SkillLevel;
+  suggested_rating: number;
+  is_preset: boolean;
+  claimed_by: string | null;
+  claimed_at: string | null;
+  created_at: string;
 };
 
 export type MatchStatus = "pending" | "counter_proposed" | "confirmed";
@@ -55,8 +69,14 @@ export type UserBadge = {
 };
 
 export type BadgeCode =
-  | "papa_del_grupo"
+  | "el_yacare"
+  | "zapatero"
+  | "sello_fantasma"
   | "caza_gigantes"
-  | "paseo_en_coche"
-  | "inviolable"
-  | "lomo_de_metal";
+  | "papa_de_la_banda"
+  | "viernes_flex";
+
+export type RatingHistoryPoint = {
+  date: string;
+  rating: number;
+};

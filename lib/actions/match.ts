@@ -46,6 +46,35 @@ export type PendingMatch = {
   role: "needs_confirm" | "waiting" | "needs_accept_counter";
 };
 
+export type MatchRevealData = {
+  deltas: Record<string, number>;
+  names: Record<string, string>;
+  winnerIds: string[];
+  loserIds: string[];
+  scoreStr: string;
+};
+
+async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null> {
+  const admin = createServiceClient();
+  const { data: match } = await admin.from("matches").select("*").eq("id", matchId).single();
+  if (!match || !match.rating_changes) return null;
+
+  const winnerIds = match.winner_ids as string[];
+  const loserIds = match.loser_ids as string[];
+  const allIds = [...winnerIds, ...loserIds];
+  const { data: profiles } = await admin.from("profiles").select("id, full_name").in("id", allIds);
+  const names = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.full_name]));
+  const scoreStr = (match.set_scores as SetScore[]).map((s) => `${s.p1}-${s.p2}`).join(" · ");
+
+  return {
+    deltas: match.rating_changes as Record<string, number>,
+    names,
+    winnerIds,
+    loserIds,
+    scoreStr,
+  };
+}
+
 export async function previewMatchDelta(
   input: SubmitMatchInput
 ): Promise<SubmitMatchResult> {
@@ -125,7 +154,9 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
   };
 }
 
-export async function confirmMatch(matchId: string): Promise<{ success: boolean; error?: string }> {
+export async function confirmMatch(
+  matchId: string
+): Promise<{ success: boolean; error?: string; reveal?: MatchRevealData }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -160,6 +191,8 @@ export async function confirmMatch(matchId: string): Promise<{ success: boolean;
     revalidatePath("/historial");
     revalidatePath("/partido");
     revalidatePath("/perfil");
+    const reveal = await buildMatchReveal(matchId);
+    return { success: true, reveal: reveal ?? undefined };
   }
 
   return result;
@@ -229,7 +262,7 @@ export async function proposeCounterMatch(
 
 export async function acceptCounterMatch(
   matchId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; reveal?: MatchRevealData }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -255,6 +288,8 @@ export async function acceptCounterMatch(
     revalidatePath("/historial");
     revalidatePath("/partido");
     revalidatePath("/perfil");
+    const reveal = await buildMatchReveal(matchId);
+    return { success: true, reveal: reveal ?? undefined };
   }
 
   return result;

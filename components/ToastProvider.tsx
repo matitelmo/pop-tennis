@@ -7,8 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { cn } from "@/lib/utils";
 
-type Toast = { id: number; message: string };
+type Toast = { id: number; message: string; exiting?: boolean };
 
 const ToastContext = createContext<(message: string) => void>(() => {});
 
@@ -23,18 +24,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message }]);
     setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3500);
+      setToasts((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, exiting: true } : t))
+      );
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, 300);
+    }, 3200);
   }, []);
 
   return (
     <ToastContext.Provider value={showToast}>
       {children}
-      <div className="fixed bottom-24 left-0 right-0 z-[200] mx-auto flex max-w-md flex-col gap-2 px-4 pointer-events-none">
+      <div className="pointer-events-none fixed bottom-24 left-0 right-0 z-[200] mx-auto flex max-w-md flex-col gap-2 px-4">
         {toasts.map((t) => (
           <div
             key={t.id}
-            className="rounded-xl border border-lime-400/30 bg-[#1a2332] px-4 py-3 text-sm font-medium text-white shadow-lg"
+            className={cn(
+              "rounded-xl border border-accent/30 bg-surface-elevated px-4 py-3 text-sm font-medium text-white shadow-lg",
+              t.exiting ? "animate-slide-up-out" : "animate-slide-up-in"
+            )}
           >
             {t.message}
           </div>

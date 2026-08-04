@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getWeekStart } from "@/lib/share";
+import { suggestRivalOfTheWeek, type H2HRecord } from "@/lib/rival";
 import type { Profile } from "@/types/database";
 
 export type WeeklyStats = {
@@ -87,5 +88,39 @@ export async function getRivalSuggestion(userId: string) {
     .map((p) => ({ profile: p, eloDiff: Math.abs(p.rating - current.rating) }))
     .sort((a, b) => a.eloDiff - b.eloDiff);
 
-  return candidates[0] ?? null;
+  const { data: myParts } = await supabase
+    .from("match_participants")
+    .select("match_id, team")
+    .eq("user_id", userId);
+
+  const h2hByOpponent: Record<string, H2HRecord> = {};
+  if (myParts?.length) {
+    const { data: allOppParts } = await supabase
+      .from("match_participants")
+      .select("user_id, match_id, team")
+      .in(
+        "match_id",
+        myParts.map((p) => p.match_id)
+      )
+      .neq("user_id", userId);
+
+    const myByMatch = Object.fromEntries(myParts.map((p) => [p.match_id, p.team]));
+    for (const opp of allOppParts ?? []) {
+      const myTeam = myByMatch[opp.match_id];
+      if (!myTeam) continue;
+      if (!h2hByOpponent[opp.user_id]) h2hByOpponent[opp.user_id] = { wins: 0, losses: 0 };
+      if (myTeam === "winner") h2hByOpponent[opp.user_id].wins++;
+      else h2hByOpponent[opp.user_id].losses++;
+    }
+  }
+
+  return (
+    suggestRivalOfTheWeek(
+      current,
+      profiles,
+      playedThisWeek,
+      recentOpponents,
+      h2hByOpponent
+    ) ?? candidates[0] ?? null
+  );
 }

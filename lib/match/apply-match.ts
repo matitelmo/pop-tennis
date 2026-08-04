@@ -202,6 +202,8 @@ export async function applyConfirmedMatch(
     winnerIds: outcome.winnerIds,
     loserIds: outcome.loserIds,
     ratingsBefore: ratingsMap,
+    team1Won: winningTeam === 1,
+    rawSetScores: setScores,
   });
 
   return { success: true };

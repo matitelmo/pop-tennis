@@ -4,6 +4,7 @@ import { ToastProvider } from "@/components/ToastProvider";
 import { FirstRunOverlay } from "@/components/FirstRunOverlay";
 import { getCurrentUserProfile } from "@/lib/actions/auth";
 import { getPendingMatchesForUser } from "@/lib/actions/match";
+import { checkGhostBadgeForUser } from "@/lib/badges";
 
 export default async function MainLayout({
   children,
@@ -17,11 +18,12 @@ export default async function MainLayout({
     pendingCount = pending.filter(
       (m) => m.role === "needs_confirm" || m.role === "needs_accept_counter"
     ).length;
+    await checkGhostBadgeForUser(profile.id);
   }
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-[#0a0e14] pb-28">
+      <div className="min-h-screen overscroll-none bg-background pb-28">
         <div className="mx-auto max-w-md px-4 pt-6">
           <InstallPrompt />
           {children}

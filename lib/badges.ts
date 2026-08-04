@@ -2,6 +2,7 @@
 
 import { createServiceClient } from "@/lib/supabase/admin";
 import type { BadgeCode, MatchFormat, SetScore } from "@/types/database";
+import { GHOST_INACTIVE_DAYS } from "@/lib/constants";
 
 type MatchContext = {
   matchId: string;
@@ -10,6 +11,8 @@ type MatchContext = {
   winnerIds: string[];
   loserIds: string[];
   ratingsBefore: Record<string, number>;
+  team1Won: boolean;
+  rawSetScores: SetScore[];
 };
 
 async function hasBadge(userId: string, badgeCode: BadgeCode): Promise<boolean> {
@@ -29,18 +32,16 @@ async function awardBadge(userId: string, badgeCode: BadgeCode) {
   await supabase.from("user_badges").insert({ user_id: userId, badge_code: badgeCode });
 }
 
-async function getHeadToHeadWinStreak(
-  winnerId: string,
+async function getHeadToHeadRecord(
+  userId: string,
   opponentId: string
-): Promise<number> {
+): Promise<{ wins: number; losses: number }> {
   const supabase = createServiceClient();
 
   const { data: myParts } = await supabase
     .from("match_participants")
     .select("match_id, team")
-    .eq("user_id", winnerId);
-
-  if (!myParts?.length) return 0;
+    .eq("user_id", userId);
 
   const { data: oppParts } = await supabase
     .from("match_participants")
@@ -48,41 +49,24 @@ async function getHeadToHeadWinStreak(
     .eq("user_id", opponentId);
 
   const oppMatchIds = new Set((oppParts ?? []).map((p) => p.match_id));
-  const shared = myParts.filter((p) => oppMatchIds.has(p.match_id));
+  const shared = (myParts ?? []).filter((p) => oppMatchIds.has(p.match_id));
 
-  if (!shared.length) return 0;
-
-  const { data: matches } = await supabase
-    .from("matches")
-    .select("id, created_at")
-    .in(
-      "id",
-      shared.map((s) => s.match_id)
-    )
-    .order("created_at", { ascending: false });
-
-  let streak = 0;
-  for (const match of matches ?? []) {
-    const part = shared.find((s) => s.match_id === match.id);
-    if (part?.team === "winner") {
-      streak++;
-    } else {
-      break;
-    }
+  let wins = 0;
+  let losses = 0;
+  for (const p of shared) {
+    if (p.team === "winner") wins++;
+    else losses++;
   }
-  return streak;
+  return { wins, losses };
 }
 
-function getISOWeek(date: Date): number {
-  const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = tmp.getUTCDay() || 7;
-  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-  return Math.ceil(((tmp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+function isFriday(date: Date): boolean {
+  return date.getDay() === 5;
 }
 
 export async function checkAndAwardBadges(context: MatchContext) {
   const supabase = createServiceClient();
+  const now = new Date();
 
   for (const winnerId of context.winnerIds) {
     for (const loserId of context.loserIds) {
@@ -92,41 +76,57 @@ export async function checkAndAwardBadges(context: MatchContext) {
         await awardBadge(winnerId, "caza_gigantes");
       }
 
-      const streak = await getHeadToHeadWinStreak(winnerId, loserId);
-      if (streak >= 5) {
-        await awardBadge(winnerId, "papa_del_grupo");
-      }
-    }
-
-    if (context.format.endsWith("bo5")) {
-      const winnerSets = context.setScores.filter((s) => s.p1 > s.p2).length;
-      if (winnerSets === 3 && context.setScores.length === 3) {
-        await awardBadge(winnerId, "paseo_en_coche");
+      const h2h = await getHeadToHeadRecord(winnerId, loserId);
+      if (h2h.wins - h2h.losses >= 3) {
+        await awardBadge(winnerId, "papa_de_la_banda");
       }
     }
 
     if (context.setScores.some((s) => s.p1 === 6 && s.p2 === 0)) {
-      await awardBadge(winnerId, "inviolable");
+      await awardBadge(winnerId, "zapatero");
     }
 
-    const { data: recentMatches } = await supabase
-      .from("match_participants")
-      .select("matches(created_at)")
-      .eq("user_id", winnerId);
+    const raw = context.rawSetScores;
+    if (raw.length >= 1) {
+      const firstSet = raw[0];
+      const lostFirst = context.team1Won ? firstSet.p2 > firstSet.p1 : firstSet.p1 > firstSet.p2;
+      if (lostFirst) {
+        await awardBadge(winnerId, "el_yacare");
+      }
+    }
 
-    const now = new Date();
-    const weekMatches = (recentMatches ?? []).filter((m) => {
+    const { data: fridayMatches } = await supabase
+      .from("match_participants")
+      .select("match_id, matches!inner(created_at, status)")
+      .eq("user_id", winnerId)
+      .eq("matches.status", "confirmed");
+
+    const fridayCount = (fridayMatches ?? []).filter((m) => {
       const matchData = m.matches as unknown as { created_at: string } | null;
       if (!matchData?.created_at) return false;
-      const created = new Date(matchData.created_at);
-      return (
-        created.getFullYear() === now.getFullYear() &&
-        getISOWeek(created) === getISOWeek(now)
-      );
-    });
+      return isFriday(new Date(matchData.created_at));
+    }).length;
 
-    if (weekMatches.length >= 5) {
-      await awardBadge(winnerId, "lomo_de_metal");
+    if (isFriday(now) && fridayCount >= 2) {
+      await awardBadge(winnerId, "viernes_flex");
     }
+  }
+}
+
+export async function checkGhostBadgeForUser(userId: string) {
+  const supabase = createServiceClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("last_match_at")
+    .eq("id", userId)
+    .single();
+
+  if (!profile) return;
+
+  const days = Math.floor(
+    (Date.now() - new Date(profile.last_match_at).getTime()) / (1000 * 60 * 60 * 24)
+  );
+  if (days >= GHOST_INACTIVE_DAYS) {
+    await awardBadge(userId, "sello_fantasma");
   }
 }

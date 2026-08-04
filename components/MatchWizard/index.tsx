@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { StepIndicator } from "@/components/ui/StepIndicator";
+import { cn, getAvatarColor, getInitials } from "@/lib/utils";
 import { PointsReveal } from "@/components/PointsReveal";
 import { MatchPointContext } from "@/components/MatchPointContext";
 import { ScoreControl } from "@/components/ScoreControl";
@@ -181,21 +185,7 @@ export function MatchWizard({ currentUserId }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          {[1, 2, 3].map((s) => (
-            <div
-              key={s}
-              className={`h-2 w-8 rounded-full transition ${
-                s <= step ? "bg-lime-400" : "bg-white/10"
-              }`}
-            />
-          ))}
-        </div>
-        <p className="text-center text-sm font-bold text-white">
-          {step}. {STEP_LABELS[step - 1]}
-        </p>
-      </div>
+      <StepIndicator steps={STEP_LABELS} current={step} />
 
       {step === 1 && (
         <div className="space-y-6">
@@ -207,10 +197,10 @@ export function MatchWizard({ currentUserId }: Props) {
                   key={m}
                   type="button"
                   onClick={() => setMode(m)}
-                  className={`min-h-[52px] rounded-2xl border font-bold transition active:scale-[0.98] ${
+                  className={`min-h-[52px] rounded-2xl border font-bold transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                     mode === m
-                      ? "border-lime-400 bg-lime-400/10 text-lime-400"
-                      : "border-white/10 bg-white/5 text-zinc-300"
+                      ? "border-accent bg-accent-muted text-accent"
+                      : "border-border bg-surface-glass text-zinc-300"
                   }`}
                 >
                   {m === "1v1" ? "Singles" : "Dobles"}
@@ -226,10 +216,10 @@ export function MatchWizard({ currentUserId }: Props) {
                   key={bo}
                   type="button"
                   onClick={() => setBestOf(bo)}
-                  className={`min-h-[52px] rounded-2xl border font-bold transition active:scale-[0.98] ${
+                  className={`min-h-[52px] rounded-2xl border font-bold transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                     bestOf === bo
-                      ? "border-lime-400 bg-lime-400/10 text-lime-400"
-                      : "border-white/10 bg-white/5 text-zinc-300"
+                      ? "border-accent bg-accent-muted text-accent"
+                      : "border-border bg-surface-glass text-zinc-300"
                   }`}
                 >
                   Mejor de {bo}
@@ -237,13 +227,9 @@ export function MatchWizard({ currentUserId }: Props) {
               ))}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setStep(2)}
-            className="flex w-full min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-lime-500 font-bold text-black active:scale-[0.98]"
-          >
+          <Button type="button" onClick={() => setStep(2)} className="w-full" size="lg">
             Siguiente <ChevronRight className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -273,10 +259,10 @@ export function MatchWizard({ currentUserId }: Props) {
                   key={t}
                   type="button"
                   onClick={() => setWinningTeam(t)}
-                  className={`min-h-[44px] rounded-xl border font-bold active:scale-[0.98] ${
+                  className={`min-h-[44px] rounded-xl border font-bold active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                     winningTeam === t
-                      ? "border-lime-400 bg-lime-400/10 text-lime-400"
-                      : "border-white/10 text-zinc-400"
+                      ? "border-accent bg-accent-muted text-accent"
+                      : "border-border text-zinc-400"
                   }`}
                 >
                   Equipo {t}
@@ -290,35 +276,21 @@ export function MatchWizard({ currentUserId }: Props) {
             </p>
           )}
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="flex min-h-[52px] flex-1 items-center justify-center gap-1 rounded-2xl border border-white/10 text-zinc-300"
-            >
+            <Button type="button" variant="secondary" onClick={() => setStep(1)} className="flex-1" size="lg">
               <ChevronLeft className="h-5 w-5" /> Atrás
-            </button>
-            <button
-              type="button"
-              onClick={() => setStep(3)}
-              disabled={!canProceedStep2}
-              className="flex min-h-[52px] flex-1 items-center justify-center gap-1 rounded-2xl bg-lime-500 font-bold text-black disabled:opacity-40 active:scale-[0.98]"
-            >
+            </Button>
+            <Button type="button" onClick={() => setStep(3)} disabled={!canProceedStep2} className="flex-1" size="lg">
               Siguiente <ChevronRight className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {step === 3 && (
-        <div className="space-y-4">
-          <p className="text-sm text-zinc-400">
-            Cargá el score de cada set (Equipo 1 vs Equipo 2)
-          </p>
+        <div className="space-y-4 pb-28">
+          <p className="text-body">Cargá el score de cada set (Equipo 1 vs Equipo 2)</p>
           {setScores.map((set, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4"
-            >
+            <Card key={i} className="flex items-center justify-between">
               <span className="text-sm font-medium text-zinc-400">Set {i + 1}</span>
               <ScoreControl
                 label="Eq1"
@@ -333,66 +305,49 @@ export function MatchWizard({ currentUserId }: Props) {
                 onDec={() => updateSet(i, "p2", -1)}
                 onInc={() => updateSet(i, "p2", 1)}
               />
-            </div>
+            </Card>
           ))}
           {setScores.length < maxSets && (
-            <button
-              type="button"
-              onClick={addSet}
-              className="w-full min-h-[44px] rounded-xl border border-dashed border-white/20 text-sm text-zinc-400"
-            >
+            <Button type="button" variant="secondary" onClick={addSet} className="w-full">
               + Agregar set
-            </button>
-          )}
-
-          {preview && (
-            <div className="rounded-2xl border border-lime-400/20 bg-lime-400/5 p-4">
-              <p className="text-xs font-bold uppercase text-lime-400">
-                Así moverían los puntos
-              </p>
-              <div className="mt-2 space-y-1">
-                {Object.entries(preview.deltas).map(([id, delta]) => (
-                  <div key={id} className="flex justify-between text-sm">
-                    <span className="text-zinc-300">{preview.names[id]}</span>
-                    <span className="font-bold text-lime-400">
-                      {delta >= 0 ? "+" : ""}
-                      {delta}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              {preview.summary && <MatchPointContext summary={preview.summary} />}
-            </div>
+            </Button>
           )}
 
           {!preview && previewError && (
-            <p className="rounded-xl bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
-              {previewError}
-            </p>
+            <p className="rounded-xl bg-warning/10 px-4 py-3 text-sm text-warning">{previewError}</p>
           )}
 
           {error && (
-            <p className="rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {error}
-            </p>
+            <p className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>
           )}
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setStep(2)}
-              className="flex min-h-[52px] flex-1 items-center justify-center gap-1 rounded-2xl border border-white/10 text-zinc-300"
-            >
+            <Button type="button" variant="secondary" onClick={() => setStep(2)} className="flex-1" size="lg">
               <ChevronLeft className="h-5 w-5" /> Atrás
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading || !preview}
-              className="flex min-h-[52px] flex-1 items-center justify-center rounded-2xl bg-lime-500 font-bold text-black disabled:opacity-50 active:scale-[0.98]"
-            >
+            </Button>
+            <Button type="button" onClick={handleSubmit} disabled={loading || !preview} className="flex-1" size="lg">
               {loading ? "Guardando..." : "Guardar Partido"}
-            </button>
+            </Button>
           </div>
+        </div>
+      )}
+
+      {step === 3 && preview && (
+        <div className="fixed bottom-28 left-0 right-0 z-40 mx-auto max-w-md px-4">
+          <Card className="border-accent/20 bg-surface-elevated/95 shadow-xl backdrop-blur-lg">
+            <p className="text-xs font-bold uppercase text-accent">Así moverían los puntos</p>
+            <div className="mt-2 space-y-1">
+              {Object.entries(preview.deltas).map(([id, delta]) => (
+                <div key={id} className="flex justify-between text-sm">
+                  <span className="text-zinc-300">{preview.names[id]}</span>
+                  <span className="font-bold text-accent">
+                    {delta >= 0 ? "+" : ""}
+                    {delta}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {preview.summary && <MatchPointContext summary={preview.summary} />}
+          </Card>
         </div>
       )}
 
@@ -435,11 +390,7 @@ function PlayerPicker({
 
   return (
     <div>
-      <p
-        className={`mb-3 text-sm font-medium ${
-          highlight ? "text-lime-400" : "text-zinc-400"
-        }`}
-      >
+      <p className={cn("mb-3 text-sm font-medium", highlight ? "text-accent" : "text-zinc-400")}>
         {title} {highlight && "🏆"}
       </p>
       {showSearch && (
@@ -448,7 +399,7 @@ function PlayerPicker({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar jugador..."
-          className="mb-3 w-full min-h-[44px] rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none focus:border-lime-400"
+          className="mb-3 w-full min-h-[44px] rounded-xl border border-border bg-surface-glass px-4 text-sm text-white outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
         />
       )}
       <div className="flex flex-wrap gap-2">
@@ -461,15 +412,27 @@ function PlayerPicker({
               type="button"
               onClick={() => onToggle(p.id)}
               disabled={isDisabled}
-              className={`min-h-[44px] rounded-full px-4 text-sm font-medium transition active:scale-95 ${
+              className={cn(
+                "relative flex min-h-[44px] items-center gap-2 rounded-full pl-1 pr-4 text-sm font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
                 isSelected
-                  ? "bg-lime-500 text-black"
+                  ? "bg-accent text-accent-foreground"
                   : isDisabled
-                    ? "bg-white/5 text-zinc-600"
-                    : "bg-white/10 text-zinc-200 hover:bg-white/20"
-              }`}
+                    ? "bg-surface-glass text-zinc-600"
+                    : "bg-surface-glass text-zinc-200 hover:bg-white/10"
+              )}
             >
+              <span
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white",
+                  getAvatarColor(p.id)
+                )}
+              >
+                {getInitials(p.full_name)}
+              </span>
               {p.full_name}
+              {isSelected && (
+                <Check className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-accent-foreground text-accent" />
+              )}
             </button>
           );
         })}

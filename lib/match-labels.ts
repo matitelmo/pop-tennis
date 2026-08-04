@@ -73,3 +73,13 @@ export function buildMatchPointSummary(params: {
 
   return { headline, details, tags };
 }
+
+export function getMatchLabel(delta: number, isWinner: boolean): string {
+  if (isWinner) {
+    if (delta >= 40) return "¡Picanchiii! Paseo histórico 🚀";
+    if (delta >= 25) return "¡Qué chivo! Triunfo sólido 🔥";
+    return "Victoria trabajada 🎾";
+  }
+  if (Math.abs(delta) >= 30) return "A ajustar la vaselina... 🧼";
+  return "En las malas se ve al equipo 🩹";
+}

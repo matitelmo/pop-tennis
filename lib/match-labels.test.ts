@@ -1,28 +1,44 @@
 import { describe, expect, it } from "vitest";
-import { buildMatchPointSummary } from "@/lib/match-labels";
+import { getMatchLabel } from "@/lib/match-labels";
+import { getPaternidadStatus, isRivalidadPareja } from "@/lib/paternidad";
 
-describe("buildMatchPointSummary", () => {
-  it("labels an upset win", () => {
-    const summary = buildMatchPointSummary({
-      winnerRatings: [1200],
-      loserRatings: [1500],
-      format: "1v1_bo3",
-      multipliers: { format: 1.2, sets: 1.0 },
-    });
-
-    expect(summary.headline).toBe("Victoria valiosa");
-    expect(summary.tags).toContain("Upset");
+describe("getMatchLabel", () => {
+  it("returns Picanchiii for big wins", () => {
+    expect(getMatchLabel(42, true)).toContain("Picanchiii");
   });
 
-  it("includes straight sets bonus", () => {
-    const summary = buildMatchPointSummary({
-      winnerRatings: [1200],
-      loserRatings: [1200],
-      format: "1v1_bo5",
-      multipliers: { format: 1.5, sets: 1.2 },
-    });
+  it("returns vaselina for big losses", () => {
+    expect(getMatchLabel(-35, false)).toContain("vaselina");
+  });
 
-    expect(summary.tags).toContain("Sets corridos");
-    expect(summary.tags).toContain("Singles Bo5");
+  it("returns trabajada for small wins", () => {
+    expect(getMatchLabel(10, true)).toBe("Victoria trabajada 🎾");
+  });
+});
+
+describe("getPaternidadStatus", () => {
+  it("detects dominancia", () => {
+    const status = getPaternidadStatus(5, 1, "Andy");
+    expect(status.type).toBe("dominancia");
+  });
+
+  it("detects desfavorable", () => {
+    const status = getPaternidadStatus(1, 5, "Andy");
+    expect(status.type).toBe("desfavorable");
+  });
+
+  it("detects rivalidad", () => {
+    const status = getPaternidadStatus(3, 2, "Andy");
+    expect(status.type).toBe("rivalidad");
+  });
+});
+
+describe("isRivalidadPareja", () => {
+  it("returns true for close records", () => {
+    expect(isRivalidadPareja(4, 3)).toBe(true);
+  });
+
+  it("returns false with no matches", () => {
+    expect(isRivalidadPareja(0, 0)).toBe(false);
   });
 });

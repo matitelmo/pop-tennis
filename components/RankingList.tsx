@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { LeaderboardRow } from "@/components/LeaderboardRow";
 import { MonthlyPodium } from "@/components/MonthlyPodium";
+import { SegmentTabs } from "@/components/ui/SegmentTabs";
+import { Button } from "@/components/ui/Button";
 import type { LeaderboardEntry } from "@/lib/actions/ranking";
 
 type Props = {
@@ -11,6 +14,12 @@ type Props = {
 };
 
 type Mode = "historical" | "monthly" | "activity";
+
+const MODE_TABS = [
+  { id: "historical", label: "Histórico" },
+  { id: "monthly", label: "Del Mes" },
+  { id: "activity", label: "Partidos" },
+];
 
 export function RankingList({ entries, currentUserId }: Props) {
   const [mode, setMode] = useState<Mode>("historical");
@@ -36,32 +45,18 @@ export function RankingList({ entries, currentUserId }: Props) {
 
   return (
     <>
-      <div className="mb-4 flex rounded-2xl border border-white/10 bg-white/5 p-1">
-        {(
-          [
-            ["historical", "Histórico"],
-            ["monthly", "Del Mes"],
-            ["activity", "Partidos"],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setMode(key)}
-            className={`min-h-[44px] flex-1 rounded-xl text-xs font-bold transition active:scale-[0.98] ${
-              mode === key ? "bg-lime-500 text-black" : "text-zinc-400"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <SegmentTabs
+        tabs={MODE_TABS}
+        activeId={mode}
+        onChange={(id) => setMode(id as Mode)}
+        className="mb-4"
+      />
 
       {mode === "monthly" && <MonthlyPodium entries={entries} />}
 
       {myEntry && (
         <div className="mb-3">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-lime-400">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-accent">
             Tu posición
           </p>
           <LeaderboardRow
@@ -76,9 +71,12 @@ export function RankingList({ entries, currentUserId }: Props) {
 
       <div className="space-y-2">
         {sorted.length === 0 && (
-          <p className="py-8 text-center text-sm text-zinc-500">
-            Todavía no hay jugadores en el ranking
-          </p>
+          <div className="py-8 text-center">
+            <p className="text-caption">Todavía no hay jugadores en el ranking</p>
+            <Link href="/partido" className="mt-3 inline-block">
+              <Button size="sm">Sé el primero en cargar un partido</Button>
+            </Link>
+          </div>
         )}
         {others.map((entry) => (
           <LeaderboardRow

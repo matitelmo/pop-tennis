@@ -25,30 +25,35 @@ export const DECAY_GRACE_DAYS = 14;
 export const DECAY_POINTS_PER_WEEK = 25;
 
 export const BADGE_DEFINITIONS = {
-  papa_del_grupo: {
-    label: "Papá del Grupo",
-    emoji: "👑",
-    description: "Ganarle 5 partidos seguidos al mismo rival",
+  el_yacare: {
+    label: "El Yacaré",
+    emoji: "🐊",
+    description: "Remontar un partido tras perder el primer set",
+  },
+  zapatero: {
+    label: "Zapatero / Paseo en Coche",
+    emoji: "🧹",
+    description: "Ganar un set 6-0",
+  },
+  sello_fantasma: {
+    label: "Sello Fantasma",
+    emoji: "👻",
+    description: "Pasar 14+ días sin jugar",
   },
   caza_gigantes: {
     label: "Caza Gigantes",
-    emoji: "🦁",
-    description: "Ganarle a alguien con +300 pts de Elo",
+    emoji: "⚡",
+    description: "Vencer a un rival con +300 pts de ranking",
   },
-  paseo_en_coche: {
-    label: "Paseo en Coche",
-    emoji: "🧹",
-    description: "Ganar un Bo5 por 3-0",
+  papa_de_la_banda: {
+    label: "Papá de la Banda",
+    emoji: "👑",
+    description: "Saldo a favor de ≥3 victorias contra un rival",
   },
-  inviolable: {
-    label: "Inviolable",
-    emoji: "🧱",
-    description: "Ganar un set 6-0",
-  },
-  lomo_de_metal: {
-    label: "Lomo de Metal",
-    emoji: "🏃",
-    description: "Jugar 5 partidos en la misma semana",
+  viernes_flex: {
+    label: "Viernes Flex",
+    emoji: "🏄‍♂️",
+    description: "Registrar 2 o más partidos un mismo viernes",
   },
 } as const;
 

@@ -1,5 +1,6 @@
 import type { Profile } from "@/types/database";
 import { PlayNudgeChip } from "@/components/PlayNudgeChip";
+import { Card } from "@/components/ui/Card";
 
 type Props = {
   totalMatches: number;
@@ -19,16 +20,14 @@ export function WeeklyDashboard({
   const pct = totalPlayers ? Math.round((playedThisWeek / totalPlayers) * 100) : 0;
 
   return (
-    <section className="mb-6 rounded-2xl border border-lime-400/20 bg-lime-400/5 p-4">
-      <h2 className="text-sm font-bold uppercase tracking-wide text-lime-400">
-        Esta semana
-      </h2>
-      <p className="mt-1 text-xs text-zinc-500">Objetivo del grupo: 1 partido por semana</p>
+    <Card className="mb-6 border-accent/20 bg-accent-muted">
+      <h2 className="text-sm font-bold uppercase tracking-wide text-accent">Esta semana</h2>
+      <p className="mt-1 text-caption">Objetivo del grupo: 1 partido por semana</p>
 
       <div
         className={`mt-3 rounded-xl px-3 py-2 text-sm ${
           userPlayedThisWeek
-            ? "bg-lime-500/10 text-lime-400"
+            ? "bg-accent/10 text-accent"
             : "bg-orange-500/10 text-orange-400"
         }`}
       >
@@ -43,7 +42,7 @@ export function WeeklyDashboard({
           <p className="text-[10px] text-zinc-500">Partidos</p>
         </div>
         <div>
-          <p className="text-2xl font-black text-lime-400">
+          <p className="text-2xl font-black text-accent">
             {playedThisWeek}/{totalPlayers}
           </p>
           <p className="text-[10px] text-zinc-500">Jugaron</p>
@@ -54,16 +53,13 @@ export function WeeklyDashboard({
         </div>
       </div>
 
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/30">
-        <div
-          className="h-full rounded-full bg-lime-500 transition-all"
-          style={{ width: `${pct}%` }}
-        />
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-glass">
+        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
       </div>
 
       {notPlayed.length > 0 && (
         <div className="mt-4">
-          <p className="mb-2 text-xs text-zinc-400">Falta jugar esta semana:</p>
+          <p className="mb-2 text-caption">Falta jugar esta semana:</p>
           <div className="flex flex-wrap gap-1.5">
             {notPlayed.map((p) => (
               <PlayNudgeChip key={p.id} id={p.id} name={p.full_name} />
@@ -71,6 +67,6 @@ export function WeeklyDashboard({
           </div>
         </div>
       )}
-    </section>
+    </Card>
   );
 }

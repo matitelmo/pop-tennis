@@ -210,7 +210,8 @@ export function RulesGuide() {
       <Section title="Fantasmas 👻" emoji="😴">
         <p>
           Si pasan más de <strong className="text-white">{GHOST_INACTIVE_DAYS} días</strong>{" "}
-          sin cargar ningún partido, aparece el sello de fantasma en el ranking.
+          sin cargar ningún partido, aparece el sello{" "}
+          <strong className="text-zinc-200">👻 Fantasmeando (-25 pts/sem)</strong> en el ranking.
         </p>
         <p>
           A partir del día {DECAY_GRACE_DAYS + 1}, se descuentan{" "}

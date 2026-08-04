@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatDate, formatFormat } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import type { HistoryItem } from "@/lib/actions/history";
 
 type Props = {
@@ -16,11 +19,8 @@ export function MatchHistoryList({ items }: Props) {
     return (
       <div className="py-12 text-center">
         <p className="text-zinc-500">Todavía no hay partidos cargados</p>
-        <Link
-          href="/partido"
-          className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-lime-500 px-6 font-bold text-black active:scale-[0.98]"
-        >
-          Cargar tu primer partido
+        <Link href="/partido" className="mt-4 inline-block">
+          <Button>Cargar tu primer partido</Button>
         </Link>
       </div>
     );
@@ -42,23 +42,13 @@ export function MatchHistoryList({ items }: Props) {
               key={match.id}
               type="button"
               onClick={() => setSelected(item)}
-              className="w-full rounded-2xl border border-white/5 bg-white/5 p-4 text-left transition active:scale-[0.99] hover:bg-white/10"
+              className="w-full rounded-2xl border border-border-subtle bg-surface-glass p-4 text-left transition active:scale-[0.99] hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <div className="flex items-center justify-between">
                 {item.isPending ? (
-                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-bold text-amber-400">
-                    Pendiente confirmación
-                  </span>
+                  <Badge variant="warning">Pendiente confirmación</Badge>
                 ) : (
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                      won
-                        ? "bg-lime-500/20 text-lime-400"
-                        : "bg-red-500/20 text-red-400"
-                    }`}
-                  >
-                    {won ? "Victoria" : "Derrota"}
-                  </span>
+                  <Badge variant={won ? "accent" : "danger"}>{won ? "Victoria" : "Derrota"}</Badge>
                 )}
                 <span className="text-xs text-zinc-500">
                   {formatDate(match.created_at)}
@@ -71,7 +61,7 @@ export function MatchHistoryList({ items }: Props) {
                 {item.rating_delta !== null && (
                   <span
                     className={`font-bold ${
-                      item.rating_delta >= 0 ? "text-lime-400" : "text-red-400"
+                      item.rating_delta >= 0 ? "text-accent" : "text-danger"
                     }`}
                   >
                     {item.rating_delta >= 0 ? "+" : ""}
@@ -89,8 +79,9 @@ export function MatchHistoryList({ items }: Props) {
           className="fixed inset-0 z-[100] flex items-end bg-black/70 p-4 backdrop-blur-sm"
           onClick={() => setSelected(null)}
         >
-          <div
-            className="w-full max-w-md rounded-3xl border border-white/10 bg-[#121820] p-6"
+          <Card
+            variant="elevated"
+            className="w-full max-w-md animate-slide-up-in rounded-3xl p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-white">Detalle del partido</h3>
@@ -111,21 +102,17 @@ export function MatchHistoryList({ items }: Props) {
             {selected.rating_delta !== null && (
               <p
                 className={`mt-3 text-lg font-black ${
-                  selected.rating_delta >= 0 ? "text-lime-400" : "text-red-400"
+                  selected.rating_delta >= 0 ? "text-accent" : "text-danger"
                 }`}
               >
                 {selected.rating_delta >= 0 ? "+" : ""}
                 {selected.rating_delta} pts
               </p>
             )}
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-              className="mt-6 w-full min-h-[44px] rounded-xl bg-white/10 text-sm font-medium text-white"
-            >
+            <Button type="button" variant="secondary" onClick={() => setSelected(null)} className="mt-6 w-full">
               Cerrar
-            </button>
-          </div>
+            </Button>
+          </Card>
         </div>
       )}
     </>

@@ -4,8 +4,10 @@ import { getLeaderboard } from "@/lib/actions/ranking";
 import { getWeeklyStats, getRivalSuggestion } from "@/lib/actions/weekly";
 import { getActivityFeed } from "@/lib/actions/activity";
 import { getPendingMatchesForUser, getAllProfiles } from "@/lib/actions/match";
-import { getCurrentUserProfile } from "@/lib/actions/auth";
-import { HomePageTabs } from "@/components/HomePageTabs";
+import { getCurrentUserProfile, updateLastSeenRank } from "@/lib/actions/auth";
+import { getInAppNotifications } from "@/lib/notifications/in-app";
+import { AppHeader } from "@/components/AppHeader";
+import { RankingHome } from "@/components/RankingHome";
 import { PageSkeleton } from "@/components/PageSkeleton";
 
 async function RankingContent() {
@@ -22,9 +24,12 @@ async function RankingContent() {
   ]);
 
   const profileNames = Object.fromEntries(profiles.map((p) => [p.id, p.full_name]));
+  const rank = entries.findIndex((e) => e.id === profile.id) + 1;
+  const notifications = await getInAppNotifications(profile, rank, entries);
+  await updateLastSeenRank(profile.id, rank);
 
   return (
-    <HomePageTabs
+    <RankingHome
       entries={entries}
       weekly={{
         totalMatches: weekly.totalMatches,
@@ -38,17 +43,18 @@ async function RankingContent() {
       profileNames={profileNames}
       rival={rival}
       currentUserId={profile.id}
+      notifications={notifications}
     />
   );
 }
 
 export default function RankingPage() {
   return (
-    <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-black text-white">Pop Tennis</h1>
-        <p className="text-sm text-zinc-400">1 partido por semana — ¿sumás?</p>
-      </header>
+    <div className="overscroll-none">
+      <AppHeader
+        title="Wild On Pop Tennis"
+        subtitle="1 partido por semana — ¿sumás?"
+      />
       <Suspense fallback={<PageSkeleton rows={6} />}>
         <RankingContent />
       </Suspense>
