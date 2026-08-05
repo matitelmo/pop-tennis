@@ -7,9 +7,10 @@ import type { PendingMatch } from "@/lib/actions/match";
 type Props = {
   matches: PendingMatch[];
   profileNames: Record<string, string>;
+  currentUserId: string;
 };
 
-export function PendingMatchesBanner({ matches, profileNames }: Props) {
+export function PendingMatchesBanner({ matches, profileNames, currentUserId }: Props) {
   const router = useRouter();
   const actionable = matches.filter(
     (m) => m.role === "needs_confirm" || m.role === "needs_accept_counter"
@@ -27,6 +28,7 @@ export function PendingMatchesBanner({ matches, profileNames }: Props) {
           key={m.id}
           match={m}
           profileNames={profileNames}
+          currentUserId={currentUserId}
           onDone={() => router.refresh()}
         />
       ))}

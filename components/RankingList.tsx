@@ -35,14 +35,6 @@ export function RankingList({ entries, currentUserId }: Props) {
     return b.rating - a.rating;
   });
 
-  const myIndex = currentUserId
-    ? sorted.findIndex((e) => e.id === currentUserId)
-    : -1;
-  const myEntry = myIndex >= 0 ? sorted[myIndex] : undefined;
-  const others = currentUserId
-    ? sorted.filter((e) => e.id !== currentUserId)
-    : sorted;
-
   return (
     <>
       <SegmentTabs
@@ -54,21 +46,6 @@ export function RankingList({ entries, currentUserId }: Props) {
 
       {mode === "monthly" && <MonthlyPodium entries={entries} />}
 
-      {myEntry && (
-        <div className="mb-3">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-accent">
-            Tu posición
-          </p>
-          <LeaderboardRow
-            entry={myEntry}
-            rank={myIndex + 1}
-            showMonthlyDelta={mode === "monthly"}
-            showActivity={mode === "activity"}
-            isCurrentUser
-          />
-        </div>
-      )}
-
       <div className="space-y-2">
         {sorted.length === 0 && (
           <div className="py-8 text-center">
@@ -78,13 +55,14 @@ export function RankingList({ entries, currentUserId }: Props) {
             </Link>
           </div>
         )}
-        {others.map((entry) => (
+        {sorted.map((entry, index) => (
           <LeaderboardRow
             key={entry.id}
             entry={entry}
-            rank={sorted.indexOf(entry) + 1}
+            rank={index + 1}
             showMonthlyDelta={mode === "monthly"}
             showActivity={mode === "activity"}
+            isCurrentUser={entry.id === currentUserId}
           />
         ))}
       </div>

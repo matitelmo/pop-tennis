@@ -9,10 +9,12 @@ import {
   type MatchRevealData,
 } from "@/lib/actions/match";
 import { SetScoresEditor } from "@/components/SetScoresEditor";
+import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { PointsReveal } from "@/components/PointsReveal";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatFormat } from "@/lib/utils";
+import { formatTeamName } from "@/lib/match/score-display";
 import { bestOfFromFormat, validateMatchScores } from "@/lib/match/set-scores";
 import type { SetScore } from "@/types/database";
 import { Check, Loader2, X } from "lucide-react";
@@ -20,10 +22,11 @@ import { Check, Loader2, X } from "lucide-react";
 type Props = {
   match: PendingMatch;
   profileNames: Record<string, string>;
+  currentUserId: string;
   onDone: () => void;
 };
 
-export function PendingMatchCard({ match, profileNames, onDone }: Props) {
+export function PendingMatchCard({ match, profileNames, currentUserId, onDone }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [disputing, setDisputing] = useState(false);
@@ -37,7 +40,16 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
     counterWinner
   );
 
-  const scoreStr = match.set_scores.map((s) => `${s.p1}-${s.p2}`).join(" · ");
+  const displayScores =
+    match.status === "counter_proposed" && match.counter_set_scores
+      ? match.counter_set_scores
+      : match.set_scores;
+  const displayWinningTeam =
+    match.status === "counter_proposed" && match.counter_winning_team
+      ? (match.counter_winning_team as 1 | 2)
+      : (match.winning_team as 1 | 2);
+  const team1Label = formatTeamName(match.team1_ids, profileNames);
+  const team2Label = formatTeamName(match.team2_ids, profileNames);
   const deadline = new Date(match.confirmation_deadline);
   const totalMs = 24 * 60 * 60 * 1000;
   const elapsed = Date.now() - (deadline.getTime() - totalMs);
@@ -50,6 +62,8 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
 
   const winnerNames = match.winner_ids.map((id) => profileNames[id] ?? "?").join(" & ");
   const loserNames = match.loser_ids.map((id) => profileNames[id] ?? "?").join(" & ");
+  const viewerOnTeam1 = match.team1_ids.includes(currentUserId);
+  const viewerOnTeam2 = match.team2_ids.includes(currentUserId);
 
   async function handleConfirm() {
     setLoading(true);
@@ -96,10 +110,24 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
             ? "Contrapropuesta pendiente"
             : "Confirmar resultado"}
         </p>
-        <p className="mt-1 font-mono text-xl text-white">{scoreStr}</p>
-        <p className="text-body">
-          {winnerNames} vs {loserNames} · {formatFormat(match.format)}
+        <p className="mt-1 text-caption">
+          Resultado propuesto · {formatFormat(match.format)}
         </p>
+        <div className="mt-3">
+          <MatchScoreBoard
+            setScores={displayScores}
+            team1Ids={match.team1_ids}
+            team2Ids={match.team2_ids}
+            profileNames={profileNames}
+            currentUserId={currentUserId}
+            winningTeam={displayWinningTeam}
+          />
+        </div>
+        {!viewerOnTeam1 && !viewerOnTeam2 && (
+          <p className="mt-2 text-caption">
+            {winnerNames} le ganó a {loserNames}
+          </p>
+        )}
 
         <div className="mt-3">
           <div className="h-1.5 overflow-hidden rounded-full bg-surface-glass">
@@ -160,13 +188,13 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
                   key={t}
                   type="button"
                   onClick={() => setCounterWinner(t)}
-                  className={`min-h-[44px] rounded-lg border text-sm font-bold active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  className={`min-h-[44px] rounded-lg border px-2 text-sm font-bold active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                     counterWinner === t
                       ? "border-accent text-accent"
                       : "border-border text-zinc-400"
                   }`}
                 >
-                  Ganó Equipo {t}
+                  Ganó {t === 1 ? team1Label : team2Label}
                 </button>
               ))}
             </div>
@@ -174,6 +202,8 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
               setScores={counterScores}
               onChange={setCounterScores}
               bestOf={counterBestOf}
+              team1Label={team1Label}
+              team2Label={team2Label}
             />
             {counterValidationError && (
               <p className="text-sm text-warning">{counterValidationError}</p>
@@ -199,6 +229,7 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
       {reveal && (
         <PointsReveal
           {...reveal}
+          currentUserId={currentUserId}
           onClose={() => {
             setReveal(null);
             onDone();

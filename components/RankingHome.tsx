@@ -49,7 +49,11 @@ export function RankingHome({
     <div className="space-y-6">
       <InAppNotifications notifications={notifications} />
 
-      <PendingMatchesBanner matches={pending} profileNames={profileNames} />
+      <PendingMatchesBanner
+        matches={pending}
+        profileNames={profileNames}
+        currentUserId={currentUserId}
+      />
 
       <WeeklyDashboard
         totalMatches={weekly.totalMatches}

@@ -27,7 +27,11 @@ export default async function PartidoPage() {
 
       {actionable.length > 0 && (
         <div className="mb-6">
-          <PendingMatchesBanner matches={pending} profileNames={profileNames} />
+          <PendingMatchesBanner
+            matches={pending}
+            profileNames={profileNames}
+            currentUserId={profile.id}
+          />
         </div>
       )}
 

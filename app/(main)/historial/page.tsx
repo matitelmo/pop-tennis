@@ -12,7 +12,7 @@ export default async function HistorialPage() {
   const profile = await getCurrentUserProfile();
   if (!profile) redirect("/login");
 
-  const history = await getMatchHistory(profile.id);
+  const { items: history, profileNames } = await getMatchHistory(profile.id);
 
   return (
     <div>
@@ -27,7 +27,11 @@ export default async function HistorialPage() {
           </Link>
         </Card>
       ) : (
-        <MatchHistoryList items={history} />
+        <MatchHistoryList
+          items={history}
+          profileNames={profileNames}
+          currentUserId={profile.id}
+        />
       )}
     </div>
   );

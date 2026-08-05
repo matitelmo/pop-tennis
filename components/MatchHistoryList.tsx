@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatDate, formatFormat } from "@/lib/utils";
+import { formatSetScoresLine, formatTeamName } from "@/lib/match/score-display";
+import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -10,9 +12,11 @@ import type { HistoryItem } from "@/lib/actions/history";
 
 type Props = {
   items: HistoryItem[];
+  profileNames: Record<string, string>;
+  currentUserId: string;
 };
 
-export function MatchHistoryList({ items }: Props) {
+export function MatchHistoryList({ items, profileNames, currentUserId }: Props) {
   const [selected, setSelected] = useState<HistoryItem | null>(null);
 
   if (!items.length) {
@@ -32,9 +36,9 @@ export function MatchHistoryList({ items }: Props) {
         {items.map((item) => {
           const { match } = item;
           const won = item.team === "winner";
-          const scoreStr = match.set_scores
-            .map((s) => `${s.p1}-${s.p2}`)
-            .join(" · ");
+          const team1Name = formatTeamName(match.team1_ids ?? [], profileNames);
+          const team2Name = formatTeamName(match.team2_ids ?? [], profileNames);
+          const scoreStr = formatSetScoresLine(match.set_scores);
           const vs = item.opponentNames.join(" & ");
 
           return (
@@ -56,6 +60,9 @@ export function MatchHistoryList({ items }: Props) {
               </div>
               <p className="mt-2 text-sm text-zinc-300">vs {vs}</p>
               <p className="mt-1 font-mono text-lg text-white">{scoreStr}</p>
+              <p className="mt-0.5 text-[11px] text-zinc-500">
+                {team1Name} (izq) · {team2Name} (der)
+              </p>
               <div className="mt-2 flex items-center justify-between text-sm">
                 <span className="text-zinc-400">{formatFormat(match.format)}</span>
                 {item.rating_delta !== null && (
@@ -88,9 +95,20 @@ export function MatchHistoryList({ items }: Props) {
             <p className="mt-2 text-sm text-zinc-400">
               vs {selected.opponentNames.join(" & ")}
             </p>
-            <p className="mt-1 font-mono text-xl text-white">
-              {selected.match.set_scores.map((s) => `${s.p1}-${s.p2}`).join(" · ")}
-            </p>
+            <div className="mt-3">
+              <MatchScoreBoard
+                setScores={selected.match.set_scores}
+                team1Ids={selected.match.team1_ids ?? []}
+                team2Ids={selected.match.team2_ids ?? []}
+                profileNames={profileNames}
+                currentUserId={currentUserId}
+                winningTeam={
+                  selected.match.winning_team === 1 || selected.match.winning_team === 2
+                    ? selected.match.winning_team
+                    : undefined
+                }
+              />
+            </div>
             <p className="mt-2 text-sm text-zinc-500">
               {formatFormat(selected.match.format)} · {formatDate(selected.match.created_at)}
             </p>

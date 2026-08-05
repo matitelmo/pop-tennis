@@ -15,6 +15,7 @@ import {
   submitMatch,
 } from "@/lib/actions/match";
 import { validateMatchScores } from "@/lib/match/set-scores";
+import { formatTeamName } from "@/lib/match/score-display";
 import type { MatchFormat, Profile, SetScore } from "@/types/database";
 import type { MatchPointSummary } from "@/lib/match-labels";
 
@@ -30,6 +31,10 @@ type RevealState = {
   winnerIds: string[];
   loserIds: string[];
   scoreStr: string;
+  setScores: SetScore[];
+  team1Ids: string[];
+  team2Ids: string[];
+  winningTeam: 1 | 2;
   pending: boolean;
   summary?: MatchPointSummary;
 };
@@ -56,6 +61,8 @@ export function MatchWizard({ currentUserId }: Props) {
     team1Ids.length === teamSize && team2Ids.length === teamSize;
 
   const scoreValidationError = validateMatchScores(setScores, bestOf, winningTeam);
+  const team1Label = formatTeamName(team1Ids, Object.fromEntries(profiles.map((p) => [p.id, p.full_name])));
+  const team2Label = formatTeamName(team2Ids, Object.fromEntries(profiles.map((p) => [p.id, p.full_name])));
 
   const loadPreview = useCallback(async () => {
     if (!canProceedStep2 || scoreValidationError) {
@@ -80,6 +87,10 @@ export function MatchWizard({ currentUserId }: Props) {
         winnerIds,
         loserIds,
         scoreStr: setScores.map((s) => `${s.p1}-${s.p2}`).join(" · "),
+        setScores,
+        team1Ids,
+        team2Ids,
+        winningTeam,
         pending: true,
         summary: result.summary,
       });
@@ -183,6 +194,10 @@ export function MatchWizard({ currentUserId }: Props) {
       winnerIds,
       loserIds,
       scoreStr: setScores.map((s) => `${s.p1}-${s.p2}`).join(" · "),
+      setScores,
+      team1Ids,
+      team2Ids,
+      winningTeam,
       pending: true,
       summary: result.summary,
     });
@@ -293,11 +308,17 @@ export function MatchWizard({ currentUserId }: Props) {
 
       {step === 3 && (
         <div className="space-y-4 pb-28">
-          <p className="text-body">Cargá el score de cada set (Equipo 1 vs Equipo 2)</p>
+          <p className="text-body">
+            Cargá el score set por set. La columna izquierda es{" "}
+            <strong className="text-white">{team1Label || "Equipo 1"}</strong> y la derecha{" "}
+            <strong className="text-white">{team2Label || "Equipo 2"}</strong>.
+          </p>
           <SetScoresEditor
             setScores={setScores}
             onChange={setSetScores}
             bestOf={bestOf}
+            team1Label={team1Label || "Eq1"}
+            team2Label={team2Label || "Eq2"}
           />
 
           {!preview && previewError && (
@@ -341,6 +362,7 @@ export function MatchWizard({ currentUserId }: Props) {
       {reveal && (
         <PointsReveal
           {...reveal}
+          currentUserId={currentUserId}
           onClose={() => {
             setReveal(null);
             resetWizard();

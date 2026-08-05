@@ -17,7 +17,12 @@ function getOpponentIdsFromMatch(match: Match, userId: string): string[] {
   return getOpponentIds(match, userId);
 }
 
-export async function getMatchHistory(userId: string): Promise<HistoryItem[]> {
+export type MatchHistoryResult = {
+  items: HistoryItem[];
+  profileNames: Record<string, string>;
+};
+
+export async function getMatchHistory(userId: string): Promise<MatchHistoryResult> {
   const supabase = await createClient();
 
   const { data: participations } = await supabase
@@ -74,21 +79,24 @@ export async function getMatchHistory(userId: string): Promise<HistoryItem[]> {
     }));
 
   const all = [...pending, ...confirmed];
-  const oppIds = new Set<string>();
+  const allParticipantIds = new Set<string>();
   for (const item of all) {
-    for (const id of getOpponentIdsFromMatch(item.match, userId)) {
-      oppIds.add(id);
+    for (const id of [
+      ...(item.match.team1_ids ?? []),
+      ...(item.match.team2_ids ?? []),
+    ]) {
+      allParticipantIds.add(id);
     }
   }
 
   const { data: profiles } = await supabase
     .from("profiles")
     .select("id, full_name")
-    .in("id", Array.from(oppIds));
+    .in("id", Array.from(allParticipantIds));
 
   const nameMap = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.full_name]));
 
-  return all
+  const items = all
     .map((item) => ({
       ...item,
       opponentNames: getOpponentIdsFromMatch(item.match, userId).map((id) => nameMap[id] ?? "?"),
@@ -97,6 +105,8 @@ export async function getMatchHistory(userId: string): Promise<HistoryItem[]> {
       (a, b) =>
         new Date(b.match.created_at).getTime() - new Date(a.match.created_at).getTime()
     );
+
+  return { items, profileNames: nameMap };
 }
 
 export async function getHeadToHead(userId: string, opponentId: string) {

@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import type { MatchFormat, SetScore } from "@/types/database";
 import type { MatchPointSummary } from "@/lib/match-labels";
+import { formatSetScoresWithTeams, formatTeamName } from "@/lib/match/score-display";
 
 export type SubmitMatchInput = MatchInput;
 
@@ -53,6 +54,10 @@ export type MatchRevealData = {
   winnerIds: string[];
   loserIds: string[];
   scoreStr: string;
+  setScores?: SetScore[];
+  team1Ids?: string[];
+  team2Ids?: string[];
+  winningTeam?: 1 | 2;
 };
 
 async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null> {
@@ -62,10 +67,18 @@ async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null
 
   const winnerIds = match.winner_ids as string[];
   const loserIds = match.loser_ids as string[];
-  const allIds = [...winnerIds, ...loserIds];
+  const team1Ids = match.team1_ids as string[];
+  const team2Ids = match.team2_ids as string[];
+  const setScores = match.set_scores as SetScore[];
+  const winningTeam = match.winning_team as 1 | 2;
+  const allIds = Array.from(
+    new Set([...winnerIds, ...loserIds, ...team1Ids, ...team2Ids])
+  );
   const { data: profiles } = await admin.from("profiles").select("id, full_name").in("id", allIds);
   const names = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.full_name]));
-  const scoreStr = (match.set_scores as SetScore[]).map((s) => `${s.p1}-${s.p2}`).join(" · ");
+  const team1Name = formatTeamName(team1Ids, names);
+  const team2Name = formatTeamName(team2Ids, names);
+  const scoreStr = formatSetScoresWithTeams(setScores, team1Name, team2Name);
 
   return {
     deltas: match.rating_changes as Record<string, number>,
@@ -73,6 +86,10 @@ async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null
     winnerIds,
     loserIds,
     scoreStr,
+    setScores,
+    team1Ids,
+    team2Ids,
+    winningTeam,
   };
 }
 

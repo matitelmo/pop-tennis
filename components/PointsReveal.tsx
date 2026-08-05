@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MatchPointContext } from "@/components/MatchPointContext";
+import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { TercerTiempoModal } from "@/components/InAppNotifications";
 import { Button } from "@/components/ui/Button";
 import { buildMatchShareText, shareViaWhatsApp } from "@/lib/share";
 import { getMatchLabel, type MatchPointSummary } from "@/lib/match-labels";
 import { cn } from "@/lib/utils";
+import type { SetScore } from "@/types/database";
 
 type Props = {
   deltas: Record<string, number>;
@@ -15,6 +17,11 @@ type Props = {
   winnerIds: string[];
   loserIds: string[];
   scoreStr: string;
+  setScores?: SetScore[];
+  team1Ids?: string[];
+  team2Ids?: string[];
+  winningTeam?: 1 | 2;
+  currentUserId?: string;
   pending?: boolean;
   summary?: MatchPointSummary;
   onClose: () => void;
@@ -72,6 +79,11 @@ export function PointsReveal({
   winnerIds,
   loserIds,
   scoreStr,
+  setScores,
+  team1Ids,
+  team2Ids,
+  winningTeam,
+  currentUserId,
   pending = false,
   summary,
   onClose,
@@ -137,7 +149,21 @@ export function PointsReveal({
               Bonus Partido de la Semana ×1.25
             </p>
           )}
-          <p className="mb-4 text-center font-mono text-sm text-zinc-400">{scoreStr}</p>
+          {setScores && team1Ids && team2Ids ? (
+            <div className="mb-4">
+              <MatchScoreBoard
+                setScores={setScores}
+                team1Ids={team1Ids}
+                team2Ids={team2Ids}
+                profileNames={names}
+                currentUserId={currentUserId}
+                winningTeam={winningTeam}
+                compact
+              />
+            </div>
+          ) : (
+            <p className="mb-4 text-center font-mono text-sm text-zinc-400">{scoreStr}</p>
+          )}
           <div className="space-y-3">
             {Object.entries(deltas).map(([id, delta]) => {
               const isWinner = winnerIds.includes(id);

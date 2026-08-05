@@ -14,9 +14,17 @@ type Props = {
   setScores: SetScore[];
   onChange: (scores: SetScore[]) => void;
   bestOf: 3 | 5;
+  team1Label?: string;
+  team2Label?: string;
 };
 
-export function SetScoresEditor({ setScores, onChange, bestOf }: Props) {
+export function SetScoresEditor({
+  setScores,
+  onChange,
+  bestOf,
+  team1Label = "Eq1",
+  team2Label = "Eq2",
+}: Props) {
   const updateSet = (index: number, side: "p1" | "p2", delta: number) => {
     onChange(
       setScores.map((s, i) =>
@@ -37,6 +45,13 @@ export function SetScoresEditor({ setScores, onChange, bestOf }: Props) {
 
   return (
     <div className="space-y-3">
+      {(team1Label !== "Eq1" || team2Label !== "Eq2") && (
+        <p className="rounded-xl bg-surface-glass px-3 py-2 text-center text-xs text-zinc-400">
+          Izquierda: <span className="font-semibold text-white">{team1Label}</span>
+          {" · "}
+          Derecha: <span className="font-semibold text-white">{team2Label}</span>
+        </p>
+      )}
       {setScores.map((set, i) => {
         const setError = getSetValidationError(set);
         return (
@@ -56,14 +71,14 @@ export function SetScoresEditor({ setScores, onChange, bestOf }: Props) {
             </div>
             <div className="flex items-center justify-between">
               <ScoreControl
-                label="Eq1"
+                label={team1Label.length > 12 ? "Eq1" : team1Label}
                 value={set.p1}
                 onDec={() => updateSet(i, "p1", -1)}
                 onInc={() => updateSet(i, "p1", 1)}
               />
               <span className="text-zinc-600">-</span>
               <ScoreControl
-                label="Eq2"
+                label={team2Label.length > 12 ? "Eq2" : team2Label}
                 value={set.p2}
                 onDec={() => updateSet(i, "p2", -1)}
                 onInc={() => updateSet(i, "p2", 1)}
