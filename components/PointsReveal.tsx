@@ -21,10 +21,9 @@ type Props = {
 };
 
 function AnimatedDelta({ value, pending }: { value: number; pending: boolean }) {
-  const [display, setDisplay] = useState(pending ? 0 : value);
+  const [display, setDisplay] = useState(0);
 
   useEffect(() => {
-    if (pending) return;
     const target = value;
     const steps = 20;
     const step = target / steps;
@@ -41,20 +40,28 @@ function AnimatedDelta({ value, pending }: { value: number; pending: boolean }) 
       }
     }, 25);
     return () => clearInterval(id);
-  }, [value, pending]);
+  }, [value]);
 
+  const shown = pending ? value : display;
   const hasUpset = !pending && value >= 40;
 
   return (
     <span
       className={cn(
         "text-xl font-black tabular-nums",
-        pending ? "text-zinc-400" : value >= 0 ? "text-success" : "text-danger",
+        pending
+          ? shown >= 0
+            ? "text-zinc-200"
+            : "text-zinc-400"
+          : shown >= 0
+            ? "text-success"
+            : "text-danger",
         hasUpset && "animate-pulse"
       )}
     >
-      {pending ? "~" : display >= 0 ? "+" : ""}
-      {display}
+      {pending ? "~" : ""}
+      {shown >= 0 ? "+" : ""}
+      {shown}
     </span>
   );
 }
@@ -92,7 +99,7 @@ export function PointsReveal({
       winnerNames,
       loserNames,
       scoreStr,
-      deltas: pending ? undefined : deltas,
+      deltas,
       pending,
     });
     shareViaWhatsApp(text);
@@ -134,14 +141,16 @@ export function PointsReveal({
           <div className="space-y-3">
             {Object.entries(deltas).map(([id, delta]) => {
               const isWinner = winnerIds.includes(id);
-              const label = pending ? null : getMatchLabel(delta, isWinner);
+              const label = getMatchLabel(delta, isWinner);
               return (
                 <div key={id} className="rounded-xl bg-surface-glass px-4 py-3">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-white">{names[id]}</span>
                     <AnimatedDelta value={delta} pending={pending} />
                   </div>
-                  {label && <p className="mt-1 text-caption">{label}</p>}
+                  <p className="mt-1 text-caption">
+                    {pending ? `${label} (estimado)` : label}
+                  </p>
                 </div>
               );
             })}
