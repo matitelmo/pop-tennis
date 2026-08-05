@@ -5,6 +5,7 @@ import {
   determineWinnerFromSets,
   normalizeSetScoresForWinner,
 } from "@/lib/elo";
+import { validateMatchScores } from "@/lib/match/set-scores";
 import { buildMatchPointSummary, type MatchPointSummary } from "@/lib/match-labels";
 import { createServiceClient } from "@/lib/supabase/admin";
 import type { MatchFormat, SetScore } from "@/types/database";
@@ -61,6 +62,12 @@ export async function computeMatchOutcome(
   options?: { isWeeklyMatch?: boolean }
 ): Promise<{ success: true; outcome: MatchOutcome } | { success: false; error: string }> {
   const bestOf = input.format.endsWith("bo5") ? 5 : 3;
+
+  const scoreError = validateMatchScores(input.setScores, bestOf as 3 | 5, input.winningTeam);
+  if (scoreError) {
+    return { success: false, error: scoreError };
+  }
+
   const { isComplete } = determineWinnerFromSets(input.setScores, bestOf as 3 | 5);
 
   if (!isComplete) {

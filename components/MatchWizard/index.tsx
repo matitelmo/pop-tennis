@@ -8,12 +8,13 @@ import { StepIndicator } from "@/components/ui/StepIndicator";
 import { cn, getAvatarColor, getInitials } from "@/lib/utils";
 import { PointsReveal } from "@/components/PointsReveal";
 import { MatchPointContext } from "@/components/MatchPointContext";
-import { ScoreControl } from "@/components/ScoreControl";
+import { SetScoresEditor } from "@/components/SetScoresEditor";
 import {
   getAllProfiles,
   previewMatchDelta,
   submitMatch,
 } from "@/lib/actions/match";
+import { validateMatchScores } from "@/lib/match/set-scores";
 import type { MatchFormat, Profile, SetScore } from "@/types/database";
 import type { MatchPointSummary } from "@/lib/match-labels";
 
@@ -50,13 +51,18 @@ export function MatchWizard({ currentUserId }: Props) {
 
   const teamSize = mode === "1v1" ? 1 : 2;
   const format: MatchFormat = `${mode}_bo${bestOf}` as MatchFormat;
-  const maxSets = bestOf;
 
   const canProceedStep2 =
     team1Ids.length === teamSize && team2Ids.length === teamSize;
 
+  const scoreValidationError = validateMatchScores(setScores, bestOf, winningTeam);
+
   const loadPreview = useCallback(async () => {
-    if (!canProceedStep2) return;
+    if (!canProceedStep2 || scoreValidationError) {
+      setPreview(null);
+      setPreviewError(scoreValidationError ?? "Completá el score para ver el impacto en puntos");
+      return;
+    }
     const result = await previewMatchDelta({
       format,
       team1Ids,
@@ -92,6 +98,7 @@ export function MatchWizard({ currentUserId }: Props) {
     winningTeam,
     setScores,
     profiles,
+    scoreValidationError,
   ]);
 
   useEffect(() => {
@@ -107,6 +114,13 @@ export function MatchWizard({ currentUserId }: Props) {
     setTeam1Ids(currentUserId ? [currentUserId] : []);
     setTeam2Ids([]);
   }, [mode, currentUserId]);
+
+  useEffect(() => {
+    setSetScores((prev) => {
+      const trimmed = prev.slice(0, bestOf);
+      return trimmed.length ? trimmed : [{ p1: 6, p2: 4 }];
+    });
+  }, [bestOf]);
 
   useEffect(() => {
     if (step === 3) loadPreview();
@@ -135,21 +149,12 @@ export function MatchWizard({ currentUserId }: Props) {
     }
   };
 
-  const updateSet = (index: number, side: "p1" | "p2", delta: number) => {
-    setSetScores((prev) =>
-      prev.map((s, i) =>
-        i === index ? { ...s, [side]: Math.max(0, Math.min(7, s[side] + delta)) } : s
-      )
-    );
-  };
-
-  const addSet = () => {
-    if (setScores.length < maxSets) {
-      setSetScores([...setScores, { p1: 6, p2: 4 }]);
-    }
-  };
-
   const handleSubmit = async () => {
+    if (scoreValidationError) {
+      setError(scoreValidationError);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -289,29 +294,11 @@ export function MatchWizard({ currentUserId }: Props) {
       {step === 3 && (
         <div className="space-y-4 pb-28">
           <p className="text-body">Cargá el score de cada set (Equipo 1 vs Equipo 2)</p>
-          {setScores.map((set, i) => (
-            <Card key={i} className="flex items-center justify-between">
-              <span className="text-sm font-medium text-zinc-400">Set {i + 1}</span>
-              <ScoreControl
-                label="Eq1"
-                value={set.p1}
-                onDec={() => updateSet(i, "p1", -1)}
-                onInc={() => updateSet(i, "p1", 1)}
-              />
-              <span className="text-zinc-600">-</span>
-              <ScoreControl
-                label="Eq2"
-                value={set.p2}
-                onDec={() => updateSet(i, "p2", -1)}
-                onInc={() => updateSet(i, "p2", 1)}
-              />
-            </Card>
-          ))}
-          {setScores.length < maxSets && (
-            <Button type="button" variant="secondary" onClick={addSet} className="w-full">
-              + Agregar set
-            </Button>
-          )}
+          <SetScoresEditor
+            setScores={setScores}
+            onChange={setSetScores}
+            bestOf={bestOf}
+          />
 
           {!preview && previewError && (
             <p className="rounded-xl bg-warning/10 px-4 py-3 text-sm text-warning">{previewError}</p>

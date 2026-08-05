@@ -8,11 +8,12 @@ import {
   type PendingMatch,
   type MatchRevealData,
 } from "@/lib/actions/match";
-import { ScoreControl } from "@/components/ScoreControl";
+import { SetScoresEditor } from "@/components/SetScoresEditor";
 import { PointsReveal } from "@/components/PointsReveal";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatFormat } from "@/lib/utils";
+import { bestOfFromFormat, validateMatchScores } from "@/lib/match/set-scores";
 import type { SetScore } from "@/types/database";
 import { Check, Loader2, X } from "lucide-react";
 
@@ -29,6 +30,12 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
   const [reveal, setReveal] = useState<MatchRevealData | null>(null);
   const [counterScores, setCounterScores] = useState<SetScore[]>([...match.set_scores]);
   const [counterWinner, setCounterWinner] = useState<1 | 2>(match.winning_team as 1 | 2);
+  const counterBestOf = bestOfFromFormat(match.format);
+  const counterValidationError = validateMatchScores(
+    counterScores,
+    counterBestOf,
+    counterWinner
+  );
 
   const scoreStr = match.set_scores.map((s) => `${s.p1}-${s.p2}`).join(" · ");
   const deadline = new Date(match.confirmation_deadline);
@@ -43,14 +50,6 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
 
   const winnerNames = match.winner_ids.map((id) => profileNames[id] ?? "?").join(" & ");
   const loserNames = match.loser_ids.map((id) => profileNames[id] ?? "?").join(" & ");
-
-  const updateCounterSet = (index: number, side: "p1" | "p2", delta: number) => {
-    setCounterScores((prev) =>
-      prev.map((s, i) =>
-        i === index ? { ...s, [side]: Math.max(0, Math.min(7, s[side] + delta)) } : s
-      )
-    );
-  };
 
   async function handleConfirm() {
     setLoading(true);
@@ -73,6 +72,11 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
   }
 
   async function handleProposeCounter() {
+    if (counterValidationError) {
+      setError(counterValidationError);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     const res = await proposeCounterMatch(match.id, {
@@ -166,34 +170,24 @@ export function PendingMatchCard({ match, profileNames, onDone }: Props) {
                 </button>
               ))}
             </div>
-            {counterScores.map((set, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-lg bg-surface-glass px-3 py-2"
-              >
-                <span className="text-sm text-zinc-400">Set {i + 1}</span>
-                <div className="flex items-center gap-2">
-                  <ScoreControl
-                    label="Eq1"
-                    value={set.p1}
-                    onDec={() => updateCounterSet(i, "p1", -1)}
-                    onInc={() => updateCounterSet(i, "p1", 1)}
-                  />
-                  <span className="text-zinc-600">-</span>
-                  <ScoreControl
-                    label="Eq2"
-                    value={set.p2}
-                    onDec={() => updateCounterSet(i, "p2", -1)}
-                    onInc={() => updateCounterSet(i, "p2", 1)}
-                  />
-                </div>
-              </div>
-            ))}
+            <SetScoresEditor
+              setScores={counterScores}
+              onChange={setCounterScores}
+              bestOf={counterBestOf}
+            />
+            {counterValidationError && (
+              <p className="text-sm text-warning">{counterValidationError}</p>
+            )}
             <div className="flex gap-2">
               <Button type="button" variant="secondary" onClick={() => setDisputing(false)} className="flex-1">
                 Cancelar
               </Button>
-              <Button type="button" onClick={handleProposeCounter} disabled={loading} className="flex-1 bg-warning text-accent-foreground hover:bg-warning/90">
+              <Button
+                type="button"
+                onClick={handleProposeCounter}
+                disabled={loading || !!counterValidationError}
+                className="flex-1 bg-warning text-accent-foreground hover:bg-warning/90"
+              >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Enviar
               </Button>
