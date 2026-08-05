@@ -11,6 +11,8 @@ import { AppHeader } from "@/components/AppHeader";
 import { RankingHome } from "@/components/RankingHome";
 import { PageSkeleton } from "@/components/PageSkeleton";
 
+export const dynamic = "force-dynamic";
+
 async function RankingContent() {
   const profile = await getCurrentUserProfile();
   if (!profile) redirect("/login");

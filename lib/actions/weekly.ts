@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getAllRosterPlayers } from "@/lib/actions/roster";
 import { getWeekStart } from "@/lib/share";
 import { suggestRivalOfTheWeek, type H2HRecord } from "@/lib/rival";
 import type { Profile } from "@/types/database";
@@ -18,9 +19,9 @@ export async function getWeeklyStats(): Promise<WeeklyStats> {
   const weekStart = getWeekStart().toISOString();
 
   const { data: profiles } = await supabase.from("profiles").select("*");
-  const { data: roster } = await supabase.from("roster_players").select("id, claimed_by");
+  const roster = await getAllRosterPlayers();
   const all = profiles ?? [];
-  const totalPlayers = roster?.length ?? all.length;
+  const totalPlayers = roster.length || all.length;
 
   const { data: weekMatches } = await supabase
     .from("matches")

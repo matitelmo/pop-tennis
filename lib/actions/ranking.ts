@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getAllRosterPlayers } from "@/lib/actions/roster";
 import type { Profile, SkillLevel } from "@/types/database";
 import { getPlayNudgeDays } from "@/lib/rival";
 
@@ -95,10 +96,14 @@ async function buildProfileEntry(
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
   const supabase = await createClient();
 
-  const [{ data: profiles }, { data: roster }] = await Promise.all([
+  const [{ data: profiles, error: profilesError }, roster] = await Promise.all([
     supabase.from("profiles").select("*"),
-    supabase.from("roster_players").select("*").order("display_name"),
+    getAllRosterPlayers(),
   ]);
+
+  if (profilesError) {
+    console.error("getLeaderboard profiles:", profilesError.message);
+  }
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -107,9 +112,13 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
     (profiles ?? []).map((profile) => buildProfileEntry(supabase, profile, monthStart))
   );
 
-  const unclaimedEntries = (roster ?? [])
-    .filter((r) => !r.claimed_by)
+  const claimedRosterIds = new Set(
+    (profiles ?? []).map((p) => p.roster_player_id).filter(Boolean) as string[]
+  );
+
+  const unclaimedEntries = roster
+    .filter((r) => !r.claimed_by && !claimedRosterIds.has(r.id))
     .map(unclaimedRosterToEntry);
 
-  return [...profileEntries, ...unclaimedEntries];
+  return [...profileEntries, ...unclaimedEntries].sort((a, b) => b.rating - a.rating);
 }
