@@ -77,12 +77,12 @@ export type UserBadge = {
 };
 
 export type BadgeCode =
-  | "el_yacare"
-  | "zapatero"
+  | "pequeno_charles"
+  | "gabo_moreti"
   | "sello_fantasma"
-  | "caza_gigantes"
-  | "papa_de_la_banda"
-  | "viernes_flex";
+  | "sorpresa_sauna"
+  | "el_padre"
+  | "fede_gorrisen";
 
 export type RatingHistoryPoint = {
   date: string;

@@ -30,35 +30,44 @@ export const DECAY_POINTS_PER_WEEK = 25;
 export const MIN_RATING = 600;
 
 export const BADGE_DEFINITIONS = {
-  el_yacare: {
-    label: "El Yacaré",
-    emoji: "🐊",
-    description: "Remontar un partido tras perder el primer set",
+  pequeno_charles: {
+    label: "Pequeño Charles",
+    emoji: "🎾",
+    description: "Más partidos en el último mes calendario cerrado",
+    story:
+      "Estás para cualquiera: siempre que alguien quiere jugar, vos estás ahí. Sos el verdadero Pequeño Charles.",
   },
-  zapatero: {
-    label: "Zapatero / Paseo en Coche",
+  gabo_moreti: {
+    label: "Gabo Moreti",
     emoji: "🧹",
-    description: "Ganar un set 6-0",
+    description: "Mayor cantidad de sets ganados 6-0",
+    story: "Sos el crack que golea a sus rivales.",
   },
   sello_fantasma: {
     label: "Sello Fantasma",
     emoji: "👻",
     description: "Pasar 14+ días sin jugar",
+    story: "Apareciste en el ranking pero la cancha te extraña. Volvé antes de que te coma el decay.",
   },
-  caza_gigantes: {
-    label: "Caza Gigantes",
-    emoji: "⚡",
-    description: "Vencer a un rival con +300 pts de ranking",
+  sorpresa_sauna: {
+    label: "Sorpresa en el Sauna",
+    emoji: "🧖",
+    description: "Diste el mayor batacazo: le ganaste al rival con más diferencia de puntos",
+    story:
+      "Como cuando entrás a un sauna y te das cuenta que los muchachos no están tomando agua. Fuiste la sorpresa del grupo.",
   },
-  papa_de_la_banda: {
-    label: "Papá de la Banda",
+  el_padre: {
+    label: "El Padre",
     emoji: "👑",
-    description: "Saldo a favor de ≥3 victorias contra un rival",
+    description: "Le ganaste más veces a una misma persona que nadie del grupo",
+    story: "Paternidades hay muchas, pero Padre del grupo hay una solo.",
   },
-  viernes_flex: {
-    label: "Viernes Flex",
+  fede_gorrisen: {
+    label: "Fede Gorrisen",
     emoji: "🏄‍♂️",
-    description: "Registrar 2 o más partidos un mismo viernes",
+    description: "Mayor cantidad de partidos jugados los viernes",
+    story:
+      "Redefinís el Viernes Flex: arrancaste con surf a la mañana y metiste Pop y pelotita.",
   },
 } as const;
 

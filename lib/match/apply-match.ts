@@ -210,16 +210,7 @@ export async function applyConfirmedMatch(
 
   await admin.from("match_participants").insert(participantRows);
 
-  await checkAndAwardBadges({
-    matchId,
-    format,
-    setScores: outcome.normalizedScores,
-    winnerIds: outcome.winnerIds,
-    loserIds: outcome.loserIds,
-    ratingsBefore: ratingsMap,
-    team1Won: winningTeam === 1,
-    rawSetScores: setScores,
-  });
+  await checkAndAwardBadges();
 
   return { success: true };
 }

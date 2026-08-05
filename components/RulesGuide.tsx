@@ -225,8 +225,12 @@ export function RulesGuide() {
         </p>
       </Section>
 
-      <Section title="Medallas" emoji="🏅">
-        <p>Se desbloquean solas cuando lográs estos hitos:</p>
+      <Section title="Premios del grupo" emoji="🏅">
+        <p>
+          Son trofeos competitivos: los tiene quien lidera cada categoría. Se recalculan
+          con cada partido confirmado. Tocá una medalla en el perfil para leer la historia
+          completa.
+        </p>
         <div className="space-y-2">
           {Object.values(BADGE_DEFINITIONS).map((badge) => (
             <div
@@ -237,6 +241,9 @@ export function RulesGuide() {
               <div>
                 <p className="font-semibold text-white">{badge.label}</p>
                 <p className="text-xs text-zinc-400">{badge.description}</p>
+                {"story" in badge && (
+                  <p className="mt-1 text-xs italic text-zinc-500">{badge.story}</p>
+                )}
               </div>
             </div>
           ))}
