@@ -77,4 +77,4 @@ curl -H "Authorization: Bearer TU_CRON_SECRET" https://tu-app.vercel.app/api/cro
 
 ## Decay por inactividad
 
-Después de 14 días sin partidos: −25 pts por cada semana extra, con piso en `base_rating`.
+Después de 14 días sin partidos: −25 pts por cada semana extra, con piso global de 600 pts (podés caer por debajo de tu `base_rating`).

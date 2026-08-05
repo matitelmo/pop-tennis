@@ -7,14 +7,14 @@ type Props = {
 export function GhostBadge({ compact }: Props) {
   if (compact) {
     return (
-      <Badge variant="ghost" title="Fantasma — -25 pts/semana sin caer del Elo base">
+      <Badge variant="ghost" title="Fantasma — -25 pts/semana (piso 600 pts)">
         👻
       </Badge>
     );
   }
 
   return (
-    <Badge variant="ghost" title="Fantasma — -25 pts/semana sin caer del Elo base">
+    <Badge variant="ghost" title="Fantasma — -25 pts/semana (piso 600 pts)">
       👻 Fantasmeando (-25 pts/sem)
     </Badge>
   );

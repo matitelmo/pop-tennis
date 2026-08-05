@@ -23,7 +23,6 @@ export async function GET(request: Request) {
   for (const profile of profiles ?? []) {
     const decay = calculateDecay({
       rating: profile.rating,
-      baseRating: profile.base_rating,
       lastMatchAt: new Date(profile.last_match_at),
       lastDecayAt: profile.last_decay_at ? new Date(profile.last_decay_at) : null,
       now,

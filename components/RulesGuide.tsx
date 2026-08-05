@@ -4,6 +4,7 @@ import {
   DECAY_POINTS_PER_WEEK,
   FORMAT_MULTIPLIERS,
   GHOST_INACTIVE_DAYS,
+  MIN_RATING,
   SKILL_LEVELS,
 } from "@/lib/constants";
 
@@ -93,8 +94,8 @@ export function RulesGuide() {
           ))}
         </div>
         <p className="text-xs text-zinc-500">
-          Ese puntaje base también es tu piso: por inactividad no podés caer por
-          debajo de lo que arrancaste.
+          Ese puntaje base marca con qué arrancaste. Por inactividad podés caer por
+          debajo, pero el ranking nunca baja de {MIN_RATING} pts.
         </p>
       </Section>
 
@@ -216,7 +217,8 @@ export function RulesGuide() {
         <p>
           A partir del día {DECAY_GRACE_DAYS + 1}, se descuentan{" "}
           <strong className="text-red-400">{DECAY_POINTS_PER_WEEK} pts</strong>{" "}
-          por cada semana extra sin jugar — sin bajar de tu puntaje base inicial.
+          por cada semana extra sin jugar — con un piso global de {MIN_RATING} pts
+          (podés quedar por debajo de tu puntaje inicial).
         </p>
         <p className="text-xs text-zinc-500">
           Moraleja: no te quedes arriba del ranking sin jugar. La cancha te reclama.

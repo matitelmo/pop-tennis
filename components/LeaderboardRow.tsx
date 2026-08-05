@@ -75,7 +75,7 @@ function RowContent({
           {showMonthlyDelta ? "mes" : showActivity ? "partidos" : "pts"}
         </p>
       </div>
-      {!entry.isUnclaimed && <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600" />}
+      <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600" />
     </>
   );
 }
@@ -108,16 +108,12 @@ export function LeaderboardRow({
             : "border-border-subtle bg-surface-glass"
       )}
     >
-      {entry.isUnclaimed ? (
-        <div className="flex min-w-0 flex-1 items-center gap-3">{inner}</div>
-      ) : (
-        <Link
-          href={`/perfil/${entry.id}`}
-          className="flex min-w-0 flex-1 items-center gap-3 transition active:opacity-80"
-        >
-          {inner}
-        </Link>
-      )}
+      <Link
+        href={`/perfil/${entry.id}`}
+        className="flex min-w-0 flex-1 items-center gap-3 transition active:opacity-80"
+      >
+        {inner}
+      </Link>
       {!entry.isUnclaimed && entry.playNudge.type === "nudge" && (
         <div className="shrink-0">
           <PlayNudgeChip

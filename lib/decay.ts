@@ -1,4 +1,8 @@
-import { DECAY_GRACE_DAYS, DECAY_POINTS_PER_WEEK } from "@/lib/constants";
+import {
+  DECAY_GRACE_DAYS,
+  DECAY_POINTS_PER_WEEK,
+  MIN_RATING,
+} from "@/lib/constants";
 
 export type DecayResult = {
   previousRating: number;
@@ -8,7 +12,6 @@ export type DecayResult = {
 
 export function calculateDecay(params: {
   rating: number;
-  baseRating: number;
   lastMatchAt: Date;
   lastDecayAt: Date | null;
   now?: Date;
@@ -24,7 +27,7 @@ export function calculateDecay(params: {
   const totalWeeksOfPenalty =
     Math.floor((daysInactive - DECAY_GRACE_DAYS) / 7) + 1;
   const targetRating = Math.max(
-    params.baseRating,
+    MIN_RATING,
     params.rating - totalWeeksOfPenalty * DECAY_POINTS_PER_WEEK
   );
 

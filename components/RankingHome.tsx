@@ -14,6 +14,7 @@ import type { LeaderboardEntry } from "@/lib/actions/ranking";
 import type { ActivityItem } from "@/lib/actions/activity";
 import type { PendingMatch } from "@/lib/actions/match";
 import type { Profile } from "@/types/database";
+import { PlayerSearchList } from "@/components/PlayerSearchList";
 import type { InAppNotification } from "@/lib/notifications/in-app";
 
 type Props = {
@@ -82,6 +83,12 @@ export function RankingHome({
       <section>
         <RankingList entries={entries} currentUserId={currentUserId} />
       </section>
+
+      <PlayerSearchList
+        players={entries.map((e) => ({ id: e.id, full_name: e.full_name }))}
+        excludeId={currentUserId}
+        title="Ver perfil de..."
+      />
 
       <section>
         <div className="mb-3 flex items-center justify-between">

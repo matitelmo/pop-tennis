@@ -27,6 +27,7 @@ export const WEEKLY_MATCH_COOLDOWN_WEEKS = 3;
 export const GHOST_INACTIVE_DAYS = 14;
 export const DECAY_GRACE_DAYS = 14;
 export const DECAY_POINTS_PER_WEEK = 25;
+export const MIN_RATING = 600;
 
 export const BADGE_DEFINITIONS = {
   el_yacare: {

@@ -120,7 +120,7 @@ export async function ProfileStatsSection({ userId, possessive = "ajeno" }: Prop
                 name={p.full_name}
                 suffix={
                   <div className="flex items-center gap-2">
-                    <Badge variant="danger">Te domina</Badge>
+                    <Badge variant="danger">{isOwn ? "Te domina" : "Lo domina"}</Badge>
                     <RecordLine wins={p.wins} losses={p.losses} />
                   </div>
                 }
