@@ -15,7 +15,6 @@ import { getLeaderboard } from "@/lib/actions/ranking";
 import { getSkillLabel } from "@/lib/constants";
 import { getAvatarColor, getInitials } from "@/lib/utils";
 import { ProfileStatsSection } from "@/components/ProfileStatsSection";
-import { InviteFriends } from "@/components/InviteFriends";
 import { PlayerSearchList } from "@/components/PlayerSearchList";
 import { LogOut } from "lucide-react";
 
@@ -42,8 +41,6 @@ export default async function PerfilPage() {
           </form>
         }
       />
-
-      <InviteFriends inviteCode={process.env.NEXT_PUBLIC_GROUP_INVITE_CODE ?? ""} />
 
       <Card className="p-6 text-center">
         <div

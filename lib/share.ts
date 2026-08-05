@@ -36,16 +36,6 @@ export function shareViaWhatsApp(text: string) {
   }
 }
 
-export function buildInviteLink(code: string): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origin}/register?invite=${code}`;
-}
-
-export function buildInviteShareText(code: string): string {
-  const link = buildInviteLink(code);
-  return `🎾 Sumate al ranking de Pop Tennis. Registrate acá: ${link}`;
-}
-
 export function getWeekStart(date = new Date()): Date {
   const d = new Date(date);
   const day = d.getDay();

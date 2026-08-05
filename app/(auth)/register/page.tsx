@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState } from "react";
 import { Trophy, AlertCircle } from "lucide-react";
 import { register } from "@/lib/actions/auth";
 import { getAvailableRosterPlayers, type RosterPlayer } from "@/lib/actions/roster";
@@ -13,11 +12,8 @@ import { Input, Label } from "@/components/ui/Input";
 import { StepIndicator } from "@/components/ui/StepIndicator";
 import { cn } from "@/lib/utils";
 import type { SkillLevel } from "@/types/database";
-import { Skeleton } from "@/components/ui/Sheet";
 
 function RegisterForm() {
-  const searchParams = useSearchParams();
-  const inviteFromUrl = searchParams.get("invite") ?? "";
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
@@ -43,9 +39,6 @@ function RegisterForm() {
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
-    if (inviteFromUrl && !formData.get("inviteCode")) {
-      formData.set("inviteCode", inviteFromUrl);
-    }
     formData.set("skillLevel", skillLevel);
     if (mode === "preset" && selectedId) {
       formData.set("rosterPlayerId", selectedId);
@@ -73,8 +66,6 @@ function RegisterForm() {
       <StepIndicator steps={["Identidad", "Cuenta"]} current={step} className="mb-6" />
 
       <form action={handleSubmit} className="space-y-4">
-        <input type="hidden" name="inviteCode" value={inviteFromUrl} />
-
         {step === 1 && (
           <>
             <div className="flex gap-2">
@@ -163,12 +154,6 @@ function RegisterForm() {
                 autoComplete="new-password"
               />
             </div>
-            {!inviteFromUrl && (
-              <div>
-                <Label htmlFor="inviteCode">Código de invitación</Label>
-                <Input id="inviteCode" name="inviteCode" type="text" required />
-              </div>
-            )}
 
             <div>
               <Label>Nivel de juego</Label>
@@ -225,9 +210,5 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
-  return (
-    <Suspense fallback={<Skeleton className="h-96 w-full rounded-3xl" />}>
-      <RegisterForm />
-    </Suspense>
-  );
+  return <RegisterForm />;
 }

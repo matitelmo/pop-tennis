@@ -21,14 +21,8 @@ export async function register(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const skillLevel = formData.get("skillLevel") as SkillLevel;
-  const inviteCode = formData.get("inviteCode") as string;
   const rosterPlayerId = formData.get("rosterPlayerId") as string | null;
   const newDisplayName = (formData.get("newDisplayName") as string | null)?.trim();
-
-  const expectedCode = process.env.NEXT_PUBLIC_GROUP_INVITE_CODE;
-  if (expectedCode && inviteCode !== expectedCode) {
-    return { error: "Código de invitación inválido" };
-  }
 
   if (!rosterPlayerId && !newDisplayName) {
     return { error: "Elegí un jugador del roster o ingresá un nombre nuevo" };
