@@ -248,6 +248,12 @@ export function RulesGuide() {
             actual.
           </li>
           <li>
+            <strong className="text-zinc-200">Tu Partido de la Semana:</strong> cada lunes
+            te emparejamos con alguien a ±3 puestos en el ranking. Si ganás ese partido
+            durante la semana, sumás un bonus ×1.25 (la derrota no tiene penalidad extra).
+            No se repite el mismo rival por 3 semanas.
+          </li>
+          <li>
             <strong className="text-zinc-200">Jugador del Mes:</strong> quién más
             puntos netos sumó en el mes calendario.
           </li>

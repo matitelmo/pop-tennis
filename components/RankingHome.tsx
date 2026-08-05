@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { PendingMatchesBanner } from "@/components/PendingMatchesBanner";
 import { WeeklyDashboard } from "@/components/WeeklyDashboard";
-import { RivalOfTheWeek } from "@/components/RivalOfTheWeek";
+import { WeeklyMatchCard } from "@/components/WeeklyMatchCard";
+import type { WeeklyMatchAssignment } from "@/lib/actions/weekly-match";
 import { RankingList } from "@/components/RankingList";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { InAppNotifications } from "@/components/InAppNotifications";
@@ -27,7 +28,7 @@ type Props = {
   activity: ActivityItem[];
   pending: PendingMatch[];
   profileNames: Record<string, string>;
-  rival: { profile: Profile; eloDiff: number } | null;
+  weeklyMatch: WeeklyMatchAssignment | null;
   currentUserId: string;
   notifications?: InAppNotification[];
 };
@@ -38,7 +39,7 @@ export function RankingHome({
   activity,
   pending,
   profileNames,
-  rival,
+  weeklyMatch,
   currentUserId,
   notifications = [],
 }: Props) {
@@ -72,7 +73,7 @@ export function RankingHome({
         </Card>
       )}
 
-      <RivalOfTheWeek rival={rival} />
+      <WeeklyMatchCard assignment={weeklyMatch} />
 
       <section>
         <RankingList entries={entries} currentUserId={currentUserId} />

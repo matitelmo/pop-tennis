@@ -4,6 +4,7 @@ import { formatFormat } from "@/lib/utils";
 export type MatchMultipliers = {
   format: number;
   sets: number;
+  weekly: number;
 };
 
 export type MatchPointSummary = {
@@ -69,6 +70,11 @@ export function buildMatchPointSummary(params: {
   if (params.multipliers.sets > 1) {
     details.push("Ganaste en sets corridos — bonus");
     tags.push("Sets corridos");
+  }
+
+  if (params.multipliers.weekly > 1) {
+    details.push("Partido de la Semana — bonus ×1.25 al ganador");
+    tags.push("Partido de la Semana");
   }
 
   return { headline, details, tags };

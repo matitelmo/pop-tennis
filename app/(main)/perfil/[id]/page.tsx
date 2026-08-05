@@ -4,6 +4,7 @@ import { getProfile, getUserBadges } from "@/lib/actions/history";
 import { getRatingHistory } from "@/lib/actions/rating-history";
 import { getLeaderboard } from "@/lib/actions/ranking";
 import { BadgeGrid } from "@/components/BadgeGrid";
+import { ProfileStatsSection } from "@/components/ProfileStatsSection";
 import { HeadToHeadSection } from "@/components/HeadToHeadSection";
 import { ChallengeButton } from "@/components/ChallengeButton";
 import { GhostBadge } from "@/components/GhostBadge";
@@ -62,6 +63,8 @@ export default async function PerfilAjenoPage({ params }: Props) {
       </Card>
 
       <RatingChart points={ratingHistory} playerName={profile.full_name} />
+
+      <ProfileStatsSection userId={profile.id} possessive="ajeno" />
 
       <ChallengeButton opponentName={profile.full_name} />
 

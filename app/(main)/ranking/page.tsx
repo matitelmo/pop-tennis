@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getLeaderboard } from "@/lib/actions/ranking";
-import { getWeeklyStats, getRivalSuggestion } from "@/lib/actions/weekly";
+import { getWeeklyStats } from "@/lib/actions/weekly";
+import { getWeeklyMatchForUser } from "@/lib/actions/weekly-match";
 import { getActivityFeed } from "@/lib/actions/activity";
 import { getPendingMatchesForUser, getAllProfiles } from "@/lib/actions/match";
 import { getCurrentUserProfile, updateLastSeenRank } from "@/lib/actions/auth";
@@ -14,13 +15,13 @@ async function RankingContent() {
   const profile = await getCurrentUserProfile();
   if (!profile) redirect("/login");
 
-  const [entries, weekly, activity, pending, profiles, rival] = await Promise.all([
+  const [entries, weekly, activity, pending, profiles, weeklyMatch] = await Promise.all([
     getLeaderboard(),
     getWeeklyStats(),
     getActivityFeed(),
     getPendingMatchesForUser(profile.id),
     getAllProfiles(),
-    getRivalSuggestion(profile.id),
+    getWeeklyMatchForUser(profile.id),
   ]);
 
   const profileNames = Object.fromEntries(profiles.map((p) => [p.id, p.full_name]));
@@ -41,7 +42,7 @@ async function RankingContent() {
       activity={activity}
       pending={pending}
       profileNames={profileNames}
-      rival={rival}
+      weeklyMatch={weeklyMatch}
       currentUserId={profile.id}
       notifications={notifications}
     />

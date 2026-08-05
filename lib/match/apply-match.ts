@@ -1,4 +1,5 @@
 import { checkAndAwardBadges } from "@/lib/badges";
+import { WEEKLY_MATCH_WIN_MULTIPLIER } from "@/lib/constants";
 import {
   calculateEloDelta,
   determineWinnerFromSets,
@@ -22,8 +23,9 @@ export type MatchOutcome = {
   normalizedScores: SetScore[];
   ratingChanges: Record<string, number>;
   delta: number;
-  multipliers: { format: number; sets: number };
+  multipliers: { format: number; sets: number; weekly: number };
   summary: MatchPointSummary;
+  isWeeklyMatch: boolean;
 };
 
 export function getConfirmationDeadline(): string {
@@ -55,7 +57,8 @@ export function getOpponentTeamIds(
 
 export async function computeMatchOutcome(
   input: MatchInput,
-  ratingsMap: Record<string, number>
+  ratingsMap: Record<string, number>,
+  options?: { isWeeklyMatch?: boolean }
 ): Promise<{ success: true; outcome: MatchOutcome } | { success: false; error: string }> {
   const bestOf = input.format.endsWith("bo5") ? 5 : 3;
   const { isComplete } = determineWinnerFromSets(input.setScores, bestOf as 3 | 5);
@@ -76,11 +79,13 @@ export async function computeMatchOutcome(
   }
 
   const normalizedScores = normalizeSetScoresForWinner(input.setScores, team1Won);
+  const isWeeklyMatch = options?.isWeeklyMatch ?? false;
   const { delta, multipliers } = calculateEloDelta({
     winnerRatings,
     loserRatings,
     format: input.format,
     setScores: normalizedScores,
+    weeklyWinMultiplier: isWeeklyMatch ? WEEKLY_MATCH_WIN_MULTIPLIER : undefined,
   });
 
   const ratingChanges: Record<string, number> = {};
@@ -104,6 +109,7 @@ export async function computeMatchOutcome(
       delta,
       multipliers,
       summary,
+      isWeeklyMatch,
     },
   };
 }
@@ -148,9 +154,11 @@ export async function applyConfirmedMatch(
   const allIds = [...team1Ids, ...team2Ids];
   const ratingsMap = await fetchRatingsForIds(allIds);
 
+  const isWeeklyMatch = Boolean(match.is_weekly_match);
   const computed = await computeMatchOutcome(
     { format, team1Ids, team2Ids, winningTeam, setScores },
-    ratingsMap
+    ratingsMap,
+    { isWeeklyMatch }
   );
 
   if (!computed.success) {

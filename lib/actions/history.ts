@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { Match } from "@/types/database";
+import { getOpponentIds } from "@/lib/match/participants";
 
 export type HistoryItem = {
   rating_delta: number | null;
@@ -11,16 +12,9 @@ export type HistoryItem = {
   isPending: boolean;
 };
 
-function getOpponentIds(match: Match, userId: string): string[] {
-  const team1 = (match.team1_ids ?? []) as string[];
-  const team2 = (match.team2_ids ?? []) as string[];
-  const inTeam1 = team1.includes(userId);
-  const myTeam = inTeam1 ? team1 : team2;
-  const oppTeam = inTeam1 ? team2 : team1;
-  const fromIds = [...(match.winner_ids as string[]), ...(match.loser_ids as string[])].filter(
-    (id) => !myTeam.includes(id)
-  );
-  return fromIds.length ? fromIds : oppTeam;
+
+function getOpponentIdsFromMatch(match: Match, userId: string): string[] {
+  return getOpponentIds(match, userId);
 }
 
 export async function getMatchHistory(userId: string): Promise<HistoryItem[]> {
@@ -82,7 +76,7 @@ export async function getMatchHistory(userId: string): Promise<HistoryItem[]> {
   const all = [...pending, ...confirmed];
   const oppIds = new Set<string>();
   for (const item of all) {
-    for (const id of getOpponentIds(item.match, userId)) {
+    for (const id of getOpponentIdsFromMatch(item.match, userId)) {
       oppIds.add(id);
     }
   }
@@ -97,7 +91,7 @@ export async function getMatchHistory(userId: string): Promise<HistoryItem[]> {
   return all
     .map((item) => ({
       ...item,
-      opponentNames: getOpponentIds(item.match, userId).map((id) => nameMap[id] ?? "?"),
+      opponentNames: getOpponentIdsFromMatch(item.match, userId).map((id) => nameMap[id] ?? "?"),
     }))
     .sort(
       (a, b) =>
@@ -132,6 +126,7 @@ export async function getHeadToHead(userId: string, opponentId: string) {
     .from("matches")
     .select("*")
     .in("id", sharedIds)
+    .eq("status", "confirmed")
     .order("created_at", { ascending: false });
 
   let wins = 0;

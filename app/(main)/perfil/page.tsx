@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { getLeaderboard } from "@/lib/actions/ranking";
 import { getSkillLabel } from "@/lib/constants";
 import { getAvatarColor, getInitials } from "@/lib/utils";
+import { ProfileStatsSection } from "@/components/ProfileStatsSection";
 import { InviteFriends } from "@/components/InviteFriends";
 import { PlayerSearchList } from "@/components/PlayerSearchList";
 import { LogOut } from "lucide-react";
@@ -67,6 +68,8 @@ export default async function PerfilPage() {
       </Card>
 
       <RatingChart points={ratingHistory} />
+
+      <ProfileStatsSection userId={profile.id} possessive="tuyo" />
 
       <div>
         <h3 className="mb-3 font-bold text-white">Medallas</h3>

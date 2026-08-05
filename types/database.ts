@@ -50,6 +50,14 @@ export type Match = {
   counter_set_scores: SetScore[] | null;
   counter_winning_team: 1 | 2 | null;
   counter_submitted_by: string | null;
+  is_weekly_match: boolean;
+};
+
+export type WeeklyMatchPairing = {
+  week_start: string;
+  user_id: string;
+  opponent_id: string;
+  created_at: string;
 };
 
 export type MatchParticipant = {

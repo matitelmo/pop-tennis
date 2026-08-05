@@ -6,6 +6,7 @@ export type EloDeltaResult = {
   multipliers: {
     format: number;
     sets: number;
+    weekly: number;
   };
 };
 
@@ -34,6 +35,7 @@ export function calculateEloDelta(params: {
   loserRatings: number[];
   format: MatchFormat;
   setScores: SetScore[];
+  weeklyWinMultiplier?: number;
 }): EloDeltaResult {
   const winnerAvg = averageRating(params.winnerRatings);
   const loserAvg = averageRating(params.loserRatings);
@@ -41,18 +43,21 @@ export function calculateEloDelta(params: {
 
   const formatMultiplier = getFormatMultiplier(params.format);
   const setsMultiplier = getSetsMultiplier(params.format, params.setScores);
+  const weeklyMultiplier = params.weeklyWinMultiplier ?? 1;
 
   const delta =
     K_FACTOR *
     (1 - expected) *
     formatMultiplier *
-    setsMultiplier;
+    setsMultiplier *
+    weeklyMultiplier;
 
   return {
     delta: Math.round(delta),
     multipliers: {
       format: formatMultiplier,
       sets: setsMultiplier,
+      weekly: weeklyMultiplier,
     },
   };
 }

@@ -69,5 +69,34 @@ describe("calculateEloDelta", () => {
     expect(result.delta).toBeGreaterThan(0);
     expect(result.multipliers.format).toBe(1.0);
     expect(result.multipliers.sets).toBe(1.2);
+    expect(result.multipliers.weekly).toBe(1);
+  });
+
+  it("applies weekly win multiplier only to winner delta magnitude", () => {
+    const base = calculateEloDelta({
+      winnerRatings: [1400],
+      loserRatings: [1400],
+      format: "1v1_bo3",
+      setScores: [
+        { p1: 6, p2: 4 },
+        { p1: 4, p2: 6 },
+        { p1: 7, p2: 5 },
+      ],
+    });
+
+    const weekly = calculateEloDelta({
+      winnerRatings: [1400],
+      loserRatings: [1400],
+      format: "1v1_bo3",
+      setScores: [
+        { p1: 6, p2: 4 },
+        { p1: 4, p2: 6 },
+        { p1: 7, p2: 5 },
+      ],
+      weeklyWinMultiplier: 1.25,
+    });
+
+    expect(weekly.delta).toBe(Math.round(base.delta * 1.25));
+    expect(weekly.multipliers.weekly).toBe(1.25);
   });
 });

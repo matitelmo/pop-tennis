@@ -125,6 +125,11 @@ export function PointsReveal({
               Esperando confirmación del rival (24h). Si no responde, se valida solo.
             </p>
           )}
+          {summary?.tags.includes("Partido de la Semana") && (
+            <p className="mb-3 text-center text-xs font-bold text-accent">
+              Bonus Partido de la Semana ×1.25
+            </p>
+          )}
           <p className="mb-4 text-center font-mono text-sm text-zinc-400">{scoreStr}</p>
           <div className="space-y-3">
             {Object.entries(deltas).map(([id, delta]) => {

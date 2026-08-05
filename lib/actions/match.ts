@@ -9,6 +9,7 @@ import {
   getOpponentTeamIds,
   type MatchInput,
 } from "@/lib/match/apply-match";
+import { isWeeklyMatchOpponent } from "@/lib/actions/weekly-match";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import type { MatchFormat, SetScore } from "@/types/database";
@@ -22,7 +23,7 @@ export type SubmitMatchResult = {
   deltas?: Record<string, number>;
   matchId?: string;
   pendingConfirmation?: boolean;
-  multipliers?: { format: number; sets: number };
+  multipliers?: { format: number; sets: number; weekly: number };
   summary?: MatchPointSummary;
 };
 
@@ -78,9 +79,23 @@ async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null
 export async function previewMatchDelta(
   input: SubmitMatchInput
 ): Promise<SubmitMatchResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const allIds = [...input.team1Ids, ...input.team2Ids];
   const ratingsMap = await fetchRatingsForIds(allIds);
-  const computed = await computeMatchOutcome(input, ratingsMap);
+
+  let isWeeklyMatch = false;
+  if (user) {
+    const opponentIds = getOpponentTeamIds(user.id, input.team1Ids, input.team2Ids);
+    isWeeklyMatch =
+      input.format.startsWith("1v1_") &&
+      (await isWeeklyMatchOpponent(user.id, opponentIds));
+  }
+
+  const computed = await computeMatchOutcome(input, ratingsMap, { isWeeklyMatch });
 
   if (!computed.success) {
     return { success: false, error: computed.error };
@@ -108,7 +123,12 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
   }
 
   const ratingsMap = await fetchRatingsForIds(allIds);
-  const computed = await computeMatchOutcome(input, ratingsMap);
+  const opponentIds = getOpponentTeamIds(user.id, input.team1Ids, input.team2Ids);
+  const isWeeklyMatch =
+    input.format.startsWith("1v1_") &&
+    (await isWeeklyMatchOpponent(user.id, opponentIds));
+
+  const computed = await computeMatchOutcome(input, ratingsMap, { isWeeklyMatch });
 
   if (!computed.success) {
     return { success: false, error: computed.error };
@@ -132,6 +152,7 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
       team1_ids: input.team1Ids,
       team2_ids: input.team2Ids,
       winning_team: input.winningTeam,
+      is_weekly_match: isWeeklyMatch,
     })
     .select("id")
     .single();
@@ -233,7 +254,8 @@ export async function proposeCounterMatch(
       winningTeam: input.winningTeam,
       setScores: input.setScores,
     },
-    ratingsMap
+    ratingsMap,
+    { isWeeklyMatch: Boolean(match.is_weekly_match) }
   );
 
   if (!computed.success) {

@@ -20,6 +20,10 @@ export const FORMAT_MULTIPLIERS: Record<MatchFormat, number> = {
   "2v2_bo3": 0.8,
 };
 
+export const WEEKLY_MATCH_WIN_MULTIPLIER = 1.25;
+export const WEEKLY_MATCH_RANK_WINDOW = 3;
+export const WEEKLY_MATCH_COOLDOWN_WEEKS = 3;
+
 export const GHOST_INACTIVE_DAYS = 14;
 export const DECAY_GRACE_DAYS = 14;
 export const DECAY_POINTS_PER_WEEK = 25;
