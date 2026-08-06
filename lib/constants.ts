@@ -32,15 +32,15 @@ export const MIN_RATING = 600;
 export const BADGE_DEFINITIONS = {
   pequeno_charles: {
     label: "Pequeño Charles",
-    emoji: "🎾",
+    emoji: "🐊",
     description: "Más partidos en el último mes calendario cerrado",
     story:
       "Estás para cualquiera: siempre que alguien quiere jugar, vos estás ahí. Sos el verdadero Pequeño Charles.",
   },
   gabo_moreti: {
-    label: "Gabo Moreti",
-    emoji: "🧹",
-    description: "Mayor cantidad de sets ganados 6-0",
+    label: "Rompe Ortos",
+    emoji: "🍑",
+    description: "No le tenés piedad a nadie, siempre vas a fondo",
     story: "Sos el crack que golea a sus rivales.",
   },
   sello_fantasma: {
