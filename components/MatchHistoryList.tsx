@@ -15,18 +15,31 @@ type Props = {
   items: HistoryItem[];
   profileNames: Record<string, string>;
   currentUserId: string;
+  variant?: "personal" | "group";
+  emptyMessage?: string;
+  showEmptyAction?: boolean;
 };
 
-export function MatchHistoryList({ items, profileNames, currentUserId }: Props) {
+export function MatchHistoryList({
+  items,
+  profileNames,
+  currentUserId,
+  variant = "personal",
+  emptyMessage = "Todavía no hay partidos cargados",
+  showEmptyAction = true,
+}: Props) {
   const [selected, setSelected] = useState<HistoryItem | null>(null);
+  const isGroup = variant === "group";
 
   if (!items.length) {
     return (
       <div className="py-12 text-center">
-        <p className="text-zinc-500">Todavía no hay partidos cargados</p>
-        <Link href="/partido" className="mt-4 inline-block">
-          <Button>Cargar tu primer partido</Button>
-        </Link>
+        <p className="text-zinc-500">{emptyMessage}</p>
+        {showEmptyAction && (
+          <Link href="/partido" className="mt-4 inline-block">
+            <Button>Cargar tu primer partido</Button>
+          </Link>
+        )}
       </div>
     );
   }
@@ -40,7 +53,7 @@ export function MatchHistoryList({ items, profileNames, currentUserId }: Props) 
           const team1Name = formatTeamName(match.team1_ids ?? [], profileNames);
           const team2Name = formatTeamName(match.team2_ids ?? [], profileNames);
           const scoreStr = formatSetScoresLine(match.set_scores);
-          const vs = item.opponentNames.join(" & ");
+          const title = isGroup ? item.headline : `vs ${item.opponentNames.join(" & ")}`;
 
           return (
             <button
@@ -52,6 +65,8 @@ export function MatchHistoryList({ items, profileNames, currentUserId }: Props) 
               <div className="flex items-center justify-between">
                 {item.isPending ? (
                   <Badge variant="warning">Pendiente confirmación</Badge>
+                ) : isGroup ? (
+                  <Badge variant="default">Confirmado</Badge>
                 ) : (
                   <Badge variant={won ? "accent" : "danger"}>{won ? "Victoria" : "Derrota"}</Badge>
                 )}
@@ -59,14 +74,16 @@ export function MatchHistoryList({ items, profileNames, currentUserId }: Props) 
                   {formatDate(match.created_at)}
                 </span>
               </div>
-              <p className="mt-2 text-sm text-zinc-300">vs {vs}</p>
+              <p className={`mt-2 text-sm text-zinc-300 ${isGroup ? "font-medium text-white" : ""}`}>
+                {title}
+              </p>
               <p className="mt-1 font-mono text-lg text-white">{scoreStr}</p>
               <p className="mt-0.5 text-[11px] text-zinc-500">
                 {team1Name} (izq) · {team2Name} (der)
               </p>
               <div className="mt-2 flex items-center justify-between text-sm">
                 <span className="text-zinc-400">{formatFormat(match.format)}</span>
-                {item.rating_delta !== null && (
+                {!isGroup && item.rating_delta !== null && (
                   <span
                     className={`font-bold ${
                       item.rating_delta >= 0 ? "text-accent" : "text-danger"
@@ -94,7 +111,7 @@ export function MatchHistoryList({ items, profileNames, currentUserId }: Props) 
           >
             <h3 className="text-lg font-bold text-white">Detalle del partido</h3>
             <p className="mt-2 text-sm text-zinc-400">
-              vs {selected.opponentNames.join(" & ")}
+              {isGroup ? selected.headline : `vs ${selected.opponentNames.join(" & ")}`}
             </p>
             <div className="mt-3">
               <MatchScoreBoard
@@ -118,7 +135,7 @@ export function MatchHistoryList({ items, profileNames, currentUserId }: Props) 
                 Esperando confirmación del rival ({CONFIRMATION_HOURS}h)
               </p>
             )}
-            {selected.rating_delta !== null && (
+            {!isGroup && selected.rating_delta !== null && (
               <p
                 className={`mt-3 text-lg font-black ${
                   selected.rating_delta >= 0 ? "text-accent" : "text-danger"
@@ -127,6 +144,21 @@ export function MatchHistoryList({ items, profileNames, currentUserId }: Props) 
                 {selected.rating_delta >= 0 ? "+" : ""}
                 {selected.rating_delta} pts
               </p>
+            )}
+            {isGroup && selected.match.rating_changes && (
+              <div className="mt-3 space-y-1 text-sm">
+                {Object.entries(selected.match.rating_changes as Record<string, number>).map(
+                  ([id, delta]) => (
+                    <div key={id} className="flex justify-between text-zinc-300">
+                      <span>{profileNames[id] ?? "Jugador"}</span>
+                      <span className={delta >= 0 ? "text-accent" : "text-danger"}>
+                        {delta >= 0 ? "+" : ""}
+                        {delta} pts
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
             )}
             <Button type="button" variant="secondary" onClick={() => setSelected(null)} className="mt-6 w-full">
               Cerrar

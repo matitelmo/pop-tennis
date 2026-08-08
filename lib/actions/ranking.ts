@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { syncProfileRatings } from "@/lib/match/sync-ratings";
 import { getAllRosterPlayers } from "@/lib/actions/roster";
 import type { Profile, SkillLevel } from "@/types/database";
 import { getPlayNudgeDays } from "@/lib/rival";
@@ -94,6 +95,8 @@ async function buildProfileEntry(
 }
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  await syncProfileRatings();
+
   const supabase = await createClient();
 
   const [{ data: profiles, error: profilesError }, roster] = await Promise.all([

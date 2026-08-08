@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Swords } from "lucide-react";
 import { getCurrentUserProfile } from "@/lib/actions/auth";
-import { getMatchHistory } from "@/lib/actions/history";
+import { getGroupMatchHistory } from "@/lib/actions/history";
 import { MatchHistoryList } from "@/components/MatchHistoryList";
 import { AppHeader } from "@/components/AppHeader";
 import { Card } from "@/components/ui/Card";
@@ -12,11 +12,11 @@ export default async function HistorialPage() {
   const profile = await getCurrentUserProfile();
   if (!profile) redirect("/login");
 
-  const { items: history, profileNames } = await getMatchHistory(profile.id);
+  const { items: history, profileNames } = await getGroupMatchHistory();
 
   return (
     <div>
-      <AppHeader title="Historial" subtitle="Todos tus partidos" />
+      <AppHeader title="Historial" subtitle="Todos los partidos del grupo" />
 
       {history.length === 0 ? (
         <Card className="py-10 text-center">
@@ -31,6 +31,8 @@ export default async function HistorialPage() {
           items={history}
           profileNames={profileNames}
           currentUserId={profile.id}
+          variant="group"
+          showEmptyAction={false}
         />
       )}
     </div>

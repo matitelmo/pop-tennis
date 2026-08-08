@@ -3,26 +3,73 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Match } from "@/types/database";
 import { getOpponentIds } from "@/lib/match/participants";
+import { formatTeamName } from "@/lib/match/score-display";
 
 export type HistoryItem = {
   rating_delta: number | null;
   team: "winner" | "loser" | null;
   match: Match;
   opponentNames: string[];
+  headline: string;
   isPending: boolean;
 };
-
-
-function getOpponentIdsFromMatch(match: Match, userId: string): string[] {
-  return getOpponentIds(match, userId);
-}
 
 export type MatchHistoryResult = {
   items: HistoryItem[];
   profileNames: Record<string, string>;
 };
 
-export async function getMatchHistory(userId: string): Promise<MatchHistoryResult> {
+function getOpponentIdsFromMatch(match: Match, userId: string): string[] {
+  return getOpponentIds(match, userId);
+}
+
+function buildHeadline(match: Match, nameMap: Record<string, string>): string {
+  const team1Name = formatTeamName((match.team1_ids ?? []) as string[], nameMap);
+  const team2Name = formatTeamName((match.team2_ids ?? []) as string[], nameMap);
+  return `${team1Name} vs ${team2Name}`;
+}
+
+async function loadProfileNames(ids: string[]): Promise<Record<string, string>> {
+  if (!ids.length) return {};
+  const supabase = await createClient();
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", ids);
+  return Object.fromEntries((profiles ?? []).map((profile) => [profile.id, profile.full_name]));
+}
+
+function collectParticipantIds(matches: Match[]): string[] {
+  const ids = new Set<string>();
+  for (const match of matches) {
+    for (const id of [
+      ...(match.team1_ids ?? []),
+      ...(match.team2_ids ?? []),
+      ...(match.winner_ids ?? []),
+      ...(match.loser_ids ?? []),
+    ]) {
+      ids.add(id);
+    }
+  }
+  return Array.from(ids);
+}
+
+function mapPendingItem(match: Match, userId: string, nameMap: Record<string, string>): HistoryItem {
+  const changes = (match.rating_changes ?? {}) as Record<string, number>;
+  const inWinners = (match.winner_ids ?? []).includes(userId);
+  const inLosers = (match.loser_ids ?? []).includes(userId);
+
+  return {
+    rating_delta: changes[userId] ?? null,
+    team: inWinners ? "winner" : inLosers ? "loser" : null,
+    match,
+    opponentNames: getOpponentIdsFromMatch(match, userId).map((id) => nameMap[id] ?? "?"),
+    headline: buildHeadline(match, nameMap),
+    isPending: true,
+  };
+}
+
+export async function getPersonalMatchHistory(userId: string): Promise<MatchHistoryResult> {
   const supabase = await createClient();
 
   const { data: participations } = await supabase
@@ -38,6 +85,8 @@ export async function getMatchHistory(userId: string): Promise<MatchHistoryResul
         loser_ids,
         team1_ids,
         team2_ids,
+        winning_team,
+        rating_changes,
         created_at,
         status
       )
@@ -46,17 +95,18 @@ export async function getMatchHistory(userId: string): Promise<MatchHistoryResul
     .order("created_at", { ascending: false, referencedTable: "matches" });
 
   const confirmed: HistoryItem[] = (participations ?? [])
-    .map((p) => {
-      const match = p.matches as unknown as Match;
+    .map((row) => {
+      const match = row.matches as unknown as Match;
       return {
-        rating_delta: p.rating_delta,
-        team: p.team as "winner" | "loser",
+        rating_delta: row.rating_delta,
+        team: row.team as "winner" | "loser",
         match,
         opponentNames: [] as string[],
+        headline: "",
         isPending: false,
       };
     })
-    .filter((p) => p.match?.id && p.match.status === "confirmed");
+    .filter((item) => item.match?.id && item.match.status === "confirmed");
 
   const { data: pendingMatches } = await supabase
     .from("matches")
@@ -65,41 +115,24 @@ export async function getMatchHistory(userId: string): Promise<MatchHistoryResul
     .order("created_at", { ascending: false });
 
   const pending: HistoryItem[] = (pendingMatches ?? [])
-    .filter((m) => {
-      const team1 = (m.team1_ids ?? []) as string[];
-      const team2 = (m.team2_ids ?? []) as string[];
+    .filter((match) => {
+      const team1 = (match.team1_ids ?? []) as string[];
+      const team2 = (match.team2_ids ?? []) as string[];
       return [...team1, ...team2].includes(userId);
     })
-    .map((m) => ({
-      rating_delta: null,
-      team: null,
-      match: m as Match,
-      opponentNames: [] as string[],
-      isPending: true,
-    }));
+    .map((match) => mapPendingItem(match as Match, userId, {}));
 
-  const all = [...pending, ...confirmed];
-  const allParticipantIds = new Set<string>();
-  for (const item of all) {
-    for (const id of [
-      ...(item.match.team1_ids ?? []),
-      ...(item.match.team2_ids ?? []),
-    ]) {
-      allParticipantIds.add(id);
-    }
-  }
+  const allMatches = [...confirmed.map((item) => item.match), ...pending.map((item) => item.match)];
+  const nameMap = await loadProfileNames(collectParticipantIds(allMatches));
 
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name")
-    .in("id", Array.from(allParticipantIds));
-
-  const nameMap = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.full_name]));
-
-  const items = all
+  const items = [...pending, ...confirmed]
     .map((item) => ({
       ...item,
-      opponentNames: getOpponentIdsFromMatch(item.match, userId).map((id) => nameMap[id] ?? "?"),
+      headline: buildHeadline(item.match, nameMap),
+      opponentNames:
+        item.opponentNames.length > 0
+          ? item.opponentNames
+          : getOpponentIdsFromMatch(item.match, userId).map((id) => nameMap[id] ?? "?"),
     }))
     .sort(
       (a, b) =>
@@ -107,6 +140,34 @@ export async function getMatchHistory(userId: string): Promise<MatchHistoryResul
     );
 
   return { items, profileNames: nameMap };
+}
+
+export async function getGroupMatchHistory(): Promise<MatchHistoryResult> {
+  const supabase = await createClient();
+
+  const { data: matches } = await supabase
+    .from("matches")
+    .select("*")
+    .in("status", ["confirmed", "pending", "counter_proposed"])
+    .order("created_at", { ascending: false });
+
+  const typedMatches = (matches ?? []) as Match[];
+  const nameMap = await loadProfileNames(collectParticipantIds(typedMatches));
+
+  const items: HistoryItem[] = typedMatches.map((match) => ({
+    rating_delta: null,
+    team: null,
+    match,
+    opponentNames: [],
+    headline: buildHeadline(match, nameMap),
+    isPending: match.status === "pending" || match.status === "counter_proposed",
+  }));
+
+  return { items, profileNames: nameMap };
+}
+
+export async function getMatchHistory(userId: string): Promise<MatchHistoryResult> {
+  return getPersonalMatchHistory(userId);
 }
 
 export async function getHeadToHead(userId: string, opponentId: string) {

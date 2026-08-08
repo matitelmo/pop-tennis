@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { logout, getCurrentUserProfile } from "@/lib/actions/auth";
-import { getUserBadges } from "@/lib/actions/history";
+import { getPersonalMatchHistory, getUserBadges } from "@/lib/actions/history";
+import { MyRecordSection } from "@/components/MyRecordSection";
 import { getRatingHistory } from "@/lib/actions/rating-history";
 import { BadgeGrid } from "@/components/BadgeGrid";
 import { GhostBadge } from "@/components/GhostBadge";
@@ -22,8 +23,11 @@ export default async function PerfilPage() {
   const profile = await getCurrentUserProfile();
   if (!profile) redirect("/login");
 
-  const badges = await getUserBadges(profile.id);
-  const ratingHistory = await getRatingHistory(profile.id);
+  const [badges, ratingHistory, personalHistory] = await Promise.all([
+    getUserBadges(profile.id),
+    getRatingHistory(profile.id),
+    getPersonalMatchHistory(profile.id),
+  ]);
   const entries = await getLeaderboard();
   const myEntry = entries.find((e) => e.id === profile.id);
   const rank = entries.findIndex((e) => e.id === profile.id) + 1;
@@ -67,6 +71,12 @@ export default async function PerfilPage() {
       <RatingChart points={ratingHistory} />
 
       <ProfileStatsSection userId={profile.id} possessive="tuyo" />
+
+      <MyRecordSection
+        items={personalHistory.items}
+        profileNames={personalHistory.profileNames}
+        currentUserId={profile.id}
+      />
 
       <div>
         <h3 className="mb-3 font-bold text-white">Medallas</h3>
