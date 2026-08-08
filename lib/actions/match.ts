@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  applyRatingChanges,
   applyConfirmedMatch,
   computeMatchOutcome,
   fetchRatingsForIds,
   getConfirmationDeadline,
   getOpponentTeamIds,
+  rollbackRatingChanges,
   type MatchInput,
 } from "@/lib/match/apply-match";
 import { isWeeklyMatchOpponent } from "@/lib/actions/weekly-match";
@@ -178,6 +180,8 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
     return { success: false, error: matchError?.message ?? "Error al guardar partido" };
   }
 
+  await applyRatingChanges(outcome.ratingChanges, { updateLastMatchAt: true });
+
   revalidatePath("/ranking");
   revalidatePath("/historial");
   revalidatePath("/partido");
@@ -262,6 +266,11 @@ export async function proposeCounterMatch(
     return { success: false, error: "Solo un rival puede proponer otro resultado" };
   }
 
+  const appliedChanges = (match.rating_changes ?? {}) as Record<string, number>;
+  if (Object.keys(appliedChanges).length) {
+    await rollbackRatingChanges(appliedChanges);
+  }
+
   const ratingsMap = await fetchRatingsForIds([...team1Ids, ...team2Ids]);
   const computed = await computeMatchOutcome(
     {
@@ -276,8 +285,13 @@ export async function proposeCounterMatch(
   );
 
   if (!computed.success) {
+    if (Object.keys(appliedChanges).length) {
+      await applyRatingChanges(appliedChanges);
+    }
     return { success: false, error: computed.error };
   }
+
+  await applyRatingChanges(computed.outcome.ratingChanges);
 
   await admin
     .from("matches")
@@ -294,7 +308,9 @@ export async function proposeCounterMatch(
     .eq("id", matchId);
 
   revalidatePath("/ranking");
+  revalidatePath("/historial");
   revalidatePath("/partido");
+  revalidatePath("/perfil");
 
   return { success: true };
 }

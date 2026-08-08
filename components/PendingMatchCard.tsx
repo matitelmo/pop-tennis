@@ -14,6 +14,7 @@ import { PointsReveal } from "@/components/PointsReveal";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatFormat } from "@/lib/utils";
+import { CONFIRMATION_HOURS } from "@/lib/constants";
 import { formatTeamName } from "@/lib/match/score-display";
 import { bestOfFromFormat, validateMatchScores } from "@/lib/match/set-scores";
 import type { SetScore } from "@/types/database";
@@ -51,7 +52,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
   const team1Label = formatTeamName(match.team1_ids, profileNames);
   const team2Label = formatTeamName(match.team2_ids, profileNames);
   const deadline = new Date(match.confirmation_deadline);
-  const totalMs = 24 * 60 * 60 * 1000;
+  const totalMs = CONFIRMATION_HOURS * 60 * 60 * 1000;
   const elapsed = Date.now() - (deadline.getTime() - totalMs);
   const progress = Math.min(100, Math.max(0, (elapsed / totalMs) * 100));
   const hoursLeft = Math.max(

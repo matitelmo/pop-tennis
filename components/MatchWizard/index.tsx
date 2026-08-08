@@ -307,7 +307,7 @@ export function MatchWizard({ currentUserId }: Props) {
       )}
 
       {step === 3 && (
-        <div className="space-y-4 pb-28">
+        <div className="space-y-4">
           <p className="text-body">
             Cargá el score set por set. La columna izquierda es{" "}
             <strong className="text-white">{team1Label || "Equipo 1"}</strong> y la derecha{" "}
@@ -321,6 +321,24 @@ export function MatchWizard({ currentUserId }: Props) {
             team2Label={team2Label || "Eq2"}
           />
 
+          {preview && (
+            <Card className="border-accent/20 bg-surface-elevated">
+              <p className="text-xs font-bold uppercase text-accent">Así moverían los puntos</p>
+              <div className="mt-2 space-y-1">
+                {Object.entries(preview.deltas).map(([id, delta]) => (
+                  <div key={id} className="flex justify-between text-sm">
+                    <span className="text-zinc-300">{preview.names[id]}</span>
+                    <span className="font-bold text-accent">
+                      {delta >= 0 ? "+" : ""}
+                      {delta}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {preview.summary && <MatchPointContext summary={preview.summary} />}
+            </Card>
+          )}
+
           {!preview && previewError && (
             <p className="rounded-xl bg-warning/10 px-4 py-3 text-sm text-warning">{previewError}</p>
           )}
@@ -328,7 +346,7 @@ export function MatchWizard({ currentUserId }: Props) {
           {error && (
             <p className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>
           )}
-          <div className="flex gap-3">
+          <div className="flex gap-3 pb-4">
             <Button type="button" variant="secondary" onClick={() => setStep(2)} className="flex-1" size="lg">
               <ChevronLeft className="h-5 w-5" /> Atrás
             </Button>
@@ -336,26 +354,6 @@ export function MatchWizard({ currentUserId }: Props) {
               {loading ? "Guardando..." : "Guardar Partido"}
             </Button>
           </div>
-        </div>
-      )}
-
-      {step === 3 && preview && (
-        <div className="fixed bottom-28 left-0 right-0 z-40 mx-auto max-w-md px-4">
-          <Card className="border-accent/20 bg-surface-elevated/95 shadow-xl backdrop-blur-lg">
-            <p className="text-xs font-bold uppercase text-accent">Así moverían los puntos</p>
-            <div className="mt-2 space-y-1">
-              {Object.entries(preview.deltas).map(([id, delta]) => (
-                <div key={id} className="flex justify-between text-sm">
-                  <span className="text-zinc-300">{preview.names[id]}</span>
-                  <span className="font-bold text-accent">
-                    {delta >= 0 ? "+" : ""}
-                    {delta}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {preview.summary && <MatchPointContext summary={preview.summary} />}
-          </Card>
         </div>
       )}
 

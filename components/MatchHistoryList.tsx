@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { formatDate, formatFormat } from "@/lib/utils";
 import { formatSetScoresLine, formatTeamName } from "@/lib/match/score-display";
+import { CONFIRMATION_HOURS } from "@/lib/constants";
 import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -114,7 +115,7 @@ export function MatchHistoryList({ items, profileNames, currentUserId }: Props) 
             </p>
             {selected.isPending && (
               <p className="mt-3 text-sm text-amber-400">
-                Esperando confirmación del rival (24h)
+                Esperando confirmación del rival ({CONFIRMATION_HOURS}h)
               </p>
             )}
             {selected.rating_delta !== null && (

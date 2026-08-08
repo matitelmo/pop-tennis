@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
+import { CONFIRMATION_HOURS } from "@/lib/constants";
 
 export function FirstRunOverlay() {
   const [show, setShow] = useState(false);
@@ -31,7 +32,7 @@ export function FirstRunOverlay() {
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-black text-accent-foreground">
             2
           </span>
-          Tu rival tiene 24h para confirmar o proponer otro score
+          Tu rival tiene {CONFIRMATION_HOURS}h para confirmar o proponer otro score
         </li>
         <li className="flex gap-3">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-black text-accent-foreground">

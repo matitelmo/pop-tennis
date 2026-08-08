@@ -28,6 +28,7 @@ export const GHOST_INACTIVE_DAYS = 14;
 export const DECAY_GRACE_DAYS = 14;
 export const DECAY_POINTS_PER_WEEK = 25;
 export const MIN_RATING = 600;
+export const CONFIRMATION_HOURS = 12;
 
 export const BADGE_DEFINITIONS = {
   pequeno_charles: {

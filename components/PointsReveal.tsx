@@ -7,6 +7,7 @@ import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { TercerTiempoModal } from "@/components/InAppNotifications";
 import { Button } from "@/components/ui/Button";
 import { buildMatchShareText, shareViaWhatsApp } from "@/lib/share";
+import { CONFIRMATION_HOURS } from "@/lib/constants";
 import { getMatchLabel, type MatchPointSummary } from "@/lib/match-labels";
 import { cn } from "@/lib/utils";
 import type { SetScore } from "@/types/database";
@@ -49,24 +50,17 @@ function AnimatedDelta({ value, pending }: { value: number; pending: boolean }) 
     return () => clearInterval(id);
   }, [value]);
 
-  const shown = pending ? value : display;
+  const shown = display;
   const hasUpset = !pending && value >= 40;
 
   return (
     <span
       className={cn(
         "text-xl font-black tabular-nums",
-        pending
-          ? shown >= 0
-            ? "text-zinc-200"
-            : "text-zinc-400"
-          : shown >= 0
-            ? "text-success"
-            : "text-danger",
+        shown >= 0 ? "text-success" : "text-danger",
         hasUpset && "animate-pulse"
       )}
     >
-      {pending ? "~" : ""}
       {shown >= 0 ? "+" : ""}
       {shown}
     </span>
@@ -141,7 +135,8 @@ export function PointsReveal({
           </h2>
           {pending && (
             <p className="mb-4 text-center text-body">
-              Esperando confirmación del rival (24h). Si no responde, se valida solo.
+              Los puntos ya se actualizaron en el ranking. Tu rival tiene {CONFIRMATION_HOURS}h
+              para confirmar o proponer otro resultado.
             </p>
           )}
           {summary?.tags.includes("Partido de la Semana") && (
@@ -175,7 +170,7 @@ export function PointsReveal({
                     <AnimatedDelta value={delta} pending={pending} />
                   </div>
                   <p className="mt-1 text-caption">
-                    {pending ? `${label} (estimado)` : label}
+                    {pending ? `${label} (provisional)` : label}
                   </p>
                 </div>
               );

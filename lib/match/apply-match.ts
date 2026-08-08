@@ -1,5 +1,5 @@
 import { checkAndAwardBadges } from "@/lib/badges";
-import { WEEKLY_MATCH_WIN_MULTIPLIER } from "@/lib/constants";
+import { CONFIRMATION_HOURS, WEEKLY_MATCH_WIN_MULTIPLIER } from "@/lib/constants";
 import {
   calculateEloDelta,
   determineWinnerFromSets,
@@ -31,8 +31,54 @@ export type MatchOutcome = {
 
 export function getConfirmationDeadline(): string {
   const d = new Date();
-  d.setHours(d.getHours() + 24);
+  d.setHours(d.getHours() + CONFIRMATION_HOURS);
   return d.toISOString();
+}
+
+export async function applyRatingChanges(
+  changes: Record<string, number>,
+  options?: { updateLastMatchAt?: boolean }
+): Promise<void> {
+  const admin = createServiceClient();
+  const now = new Date().toISOString();
+
+  for (const [id, delta] of Object.entries(changes)) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("rating")
+      .eq("id", id)
+      .single();
+
+    if (!profile) continue;
+
+    const update: { rating: number; last_match_at?: string } = {
+      rating: profile.rating + delta,
+    };
+    if (options?.updateLastMatchAt) {
+      update.last_match_at = now;
+    }
+
+    await admin.from("profiles").update(update).eq("id", id);
+  }
+}
+
+export async function rollbackRatingChanges(changes: Record<string, number>): Promise<void> {
+  const admin = createServiceClient();
+
+  for (const [id, delta] of Object.entries(changes)) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("rating")
+      .eq("id", id)
+      .single();
+
+    if (!profile) continue;
+
+    await admin
+      .from("profiles")
+      .update({ rating: profile.rating - delta })
+      .eq("id", id);
+  }
 }
 
 export function getSubmitterTeam(
@@ -145,7 +191,7 @@ export async function applyConfirmedMatch(
 
   const team1Ids = (match.team1_ids ?? []) as string[];
   const team2Ids = (match.team2_ids ?? []) as string[];
-  const format = match.format as MatchFormat;
+  const allIds = [...team1Ids, ...team2Ids];
 
   let setScores: SetScore[];
   let winningTeam: 1 | 2;
@@ -158,57 +204,48 @@ export async function applyConfirmedMatch(
     winningTeam = match.winning_team as 1 | 2;
   }
 
-  const allIds = [...team1Ids, ...team2Ids];
-  const ratingsMap = await fetchRatingsForIds(allIds);
+  const team1Won = winningTeam === 1;
+  const normalizedScores = normalizeSetScoresForWinner(setScores, team1Won);
+  const winnerIds = (match.winner_ids ?? []) as string[];
+  const loserIds = (match.loser_ids ?? []) as string[];
+  const ratingChanges = (match.rating_changes ?? {}) as Record<string, number>;
 
-  const isWeeklyMatch = Boolean(match.is_weekly_match);
-  const computed = await computeMatchOutcome(
-    { format, team1Ids, team2Ids, winningTeam, setScores },
-    ratingsMap,
-    { isWeeklyMatch }
-  );
+  const { data: existingParticipants } = await admin
+    .from("match_participants")
+    .select("user_id")
+    .eq("match_id", matchId)
+    .limit(1);
 
-  if (!computed.success) {
-    return { success: false, error: computed.error };
+  if (!existingParticipants?.length) {
+    const ratingsMap = await fetchRatingsForIds(allIds);
+    const participantRows = allIds.map((id) => {
+      const after = ratingsMap[id];
+      const delta = ratingChanges[id] ?? 0;
+      return {
+        match_id: matchId,
+        user_id: id,
+        team: winnerIds.includes(id) ? ("winner" as const) : ("loser" as const),
+        rating_before: after - delta,
+        rating_after: after,
+        rating_delta: delta,
+      };
+    });
+
+    await admin.from("match_participants").insert(participantRows);
   }
-
-  const { outcome } = computed;
-  const now = new Date().toISOString();
 
   await admin
     .from("matches")
     .update({
       status: "confirmed",
       confirmed_by: confirmedBy ?? match.confirmed_by ?? match.submitted_by,
-      set_scores: outcome.normalizedScores,
-      winner_ids: outcome.winnerIds,
-      loser_ids: outcome.loserIds,
-      rating_changes: outcome.ratingChanges,
+      set_scores: normalizedScores,
+      winner_ids: winnerIds,
+      loser_ids: loserIds,
+      rating_changes: ratingChanges,
       confirmation_deadline: null,
     })
     .eq("id", matchId);
-
-  const participantRows = allIds.map((id) => {
-    const before = ratingsMap[id];
-    const d = outcome.ratingChanges[id];
-    return {
-      match_id: matchId,
-      user_id: id,
-      team: outcome.winnerIds.includes(id) ? ("winner" as const) : ("loser" as const),
-      rating_before: before,
-      rating_after: before + d,
-      rating_delta: d,
-    };
-  });
-
-  for (const row of participantRows) {
-    await admin
-      .from("profiles")
-      .update({ rating: row.rating_after, last_match_at: now })
-      .eq("id", row.user_id);
-  }
-
-  await admin.from("match_participants").insert(participantRows);
 
   await checkAndAwardBadges();
 
