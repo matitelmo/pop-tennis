@@ -9,6 +9,10 @@ import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import {
+  MatchParticipantPoints,
+  MatchUserDelta,
+} from "@/components/MatchParticipantPoints";
 import type { HistoryItem } from "@/lib/actions/history";
 
 type Props = {
@@ -54,6 +58,7 @@ export function MatchHistoryList({
           const team2Name = formatTeamName(match.team2_ids ?? [], profileNames);
           const scoreStr = formatSetScoresLine(match.set_scores);
           const title = isGroup ? item.headline : `vs ${item.opponentNames.join(" & ")}`;
+          const ratingChanges = (match.rating_changes ?? {}) as Record<string, number>;
 
           return (
             <button
@@ -83,17 +88,16 @@ export function MatchHistoryList({
               </p>
               <div className="mt-2 flex items-center justify-between text-sm">
                 <span className="text-zinc-400">{formatFormat(match.format)}</span>
-                {!isGroup && item.rating_delta !== null && (
-                  <span
-                    className={`font-bold ${
-                      item.rating_delta >= 0 ? "text-accent" : "text-danger"
-                    }`}
-                  >
-                    {item.rating_delta >= 0 ? "+" : ""}
-                    {item.rating_delta} pts
-                  </span>
-                )}
+                {!isGroup && <MatchUserDelta delta={item.rating_delta} />}
               </div>
+              {isGroup && Object.keys(ratingChanges).length > 0 && (
+                <MatchParticipantPoints
+                  ratingChanges={ratingChanges}
+                  profileNames={profileNames}
+                  team1Ids={match.team1_ids ?? []}
+                  team2Ids={match.team2_ids ?? []}
+                />
+              )}
             </button>
           );
         })}
@@ -137,7 +141,7 @@ export function MatchHistoryList({
             )}
             {!isGroup && selected.rating_delta !== null && (
               <p
-                className={`mt-3 text-lg font-black ${
+                className={`mt-3 text-lg font-black tabular-nums ${
                   selected.rating_delta >= 0 ? "text-accent" : "text-danger"
                 }`}
               >
@@ -145,20 +149,13 @@ export function MatchHistoryList({
                 {selected.rating_delta} pts
               </p>
             )}
-            {isGroup && selected.match.rating_changes && (
-              <div className="mt-3 space-y-1 text-sm">
-                {Object.entries(selected.match.rating_changes as Record<string, number>).map(
-                  ([id, delta]) => (
-                    <div key={id} className="flex justify-between text-zinc-300">
-                      <span>{profileNames[id] ?? "Jugador"}</span>
-                      <span className={delta >= 0 ? "text-accent" : "text-danger"}>
-                        {delta >= 0 ? "+" : ""}
-                        {delta} pts
-                      </span>
-                    </div>
-                  )
-                )}
-              </div>
+            {isGroup && (
+              <MatchParticipantPoints
+                ratingChanges={(selected.match.rating_changes ?? {}) as Record<string, number>}
+                profileNames={profileNames}
+                team1Ids={selected.match.team1_ids ?? []}
+                team2Ids={selected.match.team2_ids ?? []}
+              />
             )}
             <Button type="button" variant="secondary" onClick={() => setSelected(null)} className="mt-6 w-full">
               Cerrar
