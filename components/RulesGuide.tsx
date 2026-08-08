@@ -132,7 +132,7 @@ export function RulesGuide() {
           <div className="rounded-xl bg-black/20 p-3">
             <p className="font-semibold text-lime-400">Victoria valiosa</p>
             <p className="text-xs text-zinc-400">
-              Vos 1200 le ganás a alguien de 1500 → sumás bastante (~+25 o más).
+              Vos 1000 le ganás a alguien de 1300 → sumás bastante (~+25 o más).
             </p>
           </div>
           <div className="rounded-xl bg-black/20 p-3">
@@ -144,7 +144,7 @@ export function RulesGuide() {
           <div className="rounded-xl bg-black/20 p-3">
             <p className="font-semibold text-red-400">Eras favorito</p>
             <p className="text-xs text-zinc-400">
-              Vos 1500 le ganás a alguien de 1200 → sumás poco (~+5). Si perdés, restás
+              Vos 1300 le ganás a alguien de 1000 → sumás poco (~+5). Si perdés, restás
               mucho.
             </p>
           </div>
@@ -276,7 +276,7 @@ export function RulesGuide() {
 
       <Section title="Ejemplo completo" emoji="🎾">
         <p>
-          Sos <strong className="text-white">Intermedio (1200 pts)</strong> y le ganás
+          Sos <strong className="text-white">Intermedio (1000 pts)</strong> y le ganás
           en singles Bo5 por 3-0 a alguien de{" "}
           <strong className="text-white">1500 pts</strong>:
         </p>

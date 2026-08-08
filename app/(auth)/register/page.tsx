@@ -28,7 +28,7 @@ function RegisterForm() {
   }, []);
 
   const selectedPreset = roster.find((r) => r.id === selectedId);
-  const ratingPreview = SKILL_LEVELS.find((l) => l.value === skillLevel)?.rating ?? 1200;
+  const ratingPreview = SKILL_LEVELS.find((l) => l.value === skillLevel)?.rating ?? 1000;
 
   useEffect(() => {
     if (selectedPreset) {

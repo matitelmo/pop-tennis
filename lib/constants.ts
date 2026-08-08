@@ -8,9 +8,9 @@ export const SKILL_LEVELS: {
   rating: number;
 }[] = [
   { value: "beginner", label: "Principiante", rating: 800 },
-  { value: "intermediate", label: "Intermedio", rating: 1200 },
-  { value: "advanced", label: "Avanzado", rating: 1600 },
-  { value: "expert", label: "Experto", rating: 2000 },
+  { value: "intermediate", label: "Intermedio", rating: 1000 },
+  { value: "advanced", label: "Avanzado", rating: 1200 },
+  { value: "expert", label: "Experto", rating: 1400 },
 ];
 
 export const FORMAT_MULTIPLIERS: Record<MatchFormat, number> = {
