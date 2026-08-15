@@ -35,9 +35,7 @@ export function LeaderboardRow({
         "flex items-center gap-2 rounded-2xl border px-3 py-3 transition active:scale-[0.99] sm:gap-3 sm:px-4",
         isCurrentUser
           ? "border-accent/40 bg-accent-muted ring-1 ring-accent/20"
-          : entry.isUnclaimed
-            ? "border-border-subtle bg-surface-glass/50 opacity-90"
-            : "border-border-subtle bg-surface-glass"
+          : "border-border-subtle bg-surface-glass"
       )}
     >
       <Link
@@ -61,18 +59,11 @@ export function LeaderboardRow({
               {entry.full_name}
             </p>
             {isCurrentUser && <Badge variant="accent">Vos</Badge>}
-            {entry.isUnclaimed && (
-              <Badge variant="default" title="Todavía no se registró en la app">
-                Sin reclamar
-              </Badge>
-            )}
             {entry.isGhost && <GhostBadge compact />}
           </div>
-          {!entry.isUnclaimed && (
-            <div className="mt-1">
-              <StreakIcons streak={entry.streak} />
-            </div>
-          )}
+          <div className="mt-1">
+            <StreakIcons streak={entry.streak} />
+          </div>
         </div>
         <div className="shrink-0 text-right">
           {showMonthlyDelta ? (
@@ -96,7 +87,7 @@ export function LeaderboardRow({
         </div>
       </Link>
       <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600" aria-hidden />
-      {!entry.isUnclaimed && entry.playNudge.type === "nudge" && (
+      {entry.playNudge.type === "nudge" && (
         <div className="shrink-0">
           <PlayNudgeChip
             id={entry.id}

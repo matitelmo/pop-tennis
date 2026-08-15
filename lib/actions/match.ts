@@ -183,15 +183,23 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
 
   await applyRatingChanges(outcome.ratingChanges, { updateLastMatchAt: true });
 
+  const confirmResult = await applyConfirmedMatch(match.id, user.id);
+  if (!confirmResult.success) {
+    await rollbackRatingChanges(outcome.ratingChanges);
+    await admin.from("matches").delete().eq("id", match.id);
+    return { success: false, error: confirmResult.error ?? "Error al registrar partido" };
+  }
+
   revalidatePath("/ranking");
   revalidatePath("/historial");
   revalidatePath("/partido");
+  revalidatePath("/perfil");
 
   return {
     success: true,
     deltas: outcome.ratingChanges,
     matchId: match.id,
-    pendingConfirmation: true,
+    pendingConfirmation: false,
     multipliers: outcome.multipliers,
     summary: outcome.summary,
   };

@@ -13,6 +13,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { getLeaderboard } from "@/lib/actions/ranking";
+import { getAllProfiles } from "@/lib/actions/match";
 import { getSkillLabel } from "@/lib/constants";
 import { getAvatarColor, getInitials } from "@/lib/utils";
 import { ProfileStatsSection } from "@/components/ProfileStatsSection";
@@ -29,6 +30,7 @@ export default async function PerfilPage() {
     getPersonalMatchHistory(profile.id),
   ]);
   const entries = await getLeaderboard();
+  const allProfiles = await getAllProfiles();
   const myEntry = entries.find((e) => e.id === profile.id);
   const rank = entries.findIndex((e) => e.id === profile.id) + 1;
 
@@ -84,7 +86,7 @@ export default async function PerfilPage() {
       </div>
 
       <PlayerSearchList
-        players={entries.map((e) => ({ id: e.id, full_name: e.full_name }))}
+        players={allProfiles.map((p) => ({ id: p.id, full_name: p.full_name }))}
         excludeId={profile.id}
         title="Ver perfil de..."
       />

@@ -12,10 +12,6 @@ export function buildMatchShareText(params: ShareMatchParams): string {
   const losers = params.loserNames.join(" & ");
   const url = params.appUrl ?? (typeof window !== "undefined" ? window.location.origin : "");
 
-  if (params.pending) {
-    return `🎾 Pop Tennis — Resultado cargado: ${winners} vs ${losers} (${params.scoreStr}). Falta confirmación. Ver ranking: ${url}/ranking`;
-  }
-
   const deltaStr = params.deltas
     ? Object.values(params.deltas)
         .map((d) => `${d >= 0 ? "+" : ""}${d} pts`)

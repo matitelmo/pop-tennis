@@ -2,8 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { syncProfileRatings } from "@/lib/match/sync-ratings";
-import { getAllRosterPlayers } from "@/lib/actions/roster";
-import type { Profile, SkillLevel } from "@/types/database";
+import type { Profile } from "@/types/database";
 import { getPlayNudgeDays } from "@/lib/rival";
 
 export type LeaderboardEntry = Profile & {
@@ -12,37 +11,7 @@ export type LeaderboardEntry = Profile & {
   monthlyMatches: number;
   isGhost: boolean;
   playNudge: { type: "none" | "nudge" | "ghost"; days: number };
-  isUnclaimed?: boolean;
 };
-
-function unclaimedRosterToEntry(roster: {
-  id: string;
-  display_name: string;
-  suggested_skill_level: string;
-  suggested_rating: number;
-  created_at: string;
-}): LeaderboardEntry {
-  return {
-    id: roster.id,
-    full_name: roster.display_name,
-    avatar_url: null,
-    skill_level: roster.suggested_skill_level as SkillLevel,
-    rating: roster.suggested_rating,
-    base_rating: roster.suggested_rating,
-    last_match_at: roster.created_at,
-    last_decay_at: null,
-    created_at: roster.created_at,
-    roster_player_id: roster.id,
-    last_seen_rank: null,
-    last_seen_at: null,
-    streak: [],
-    monthlyDelta: 0,
-    monthlyMatches: 0,
-    isGhost: false,
-    playNudge: { type: "none", days: 0 },
-    isUnclaimed: true,
-  };
-}
 
 async function buildProfileEntry(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -90,7 +59,6 @@ async function buildProfileEntry(
     monthlyMatches,
     isGhost: playNudge.type === "ghost",
     playNudge,
-    isUnclaimed: false,
   };
 }
 
@@ -99,29 +67,28 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
 
   const supabase = await createClient();
 
-  const [{ data: profiles, error: profilesError }, roster] = await Promise.all([
+  const [{ data: profiles, error: profilesError }, { data: activeRows }] = await Promise.all([
     supabase.from("profiles").select("*"),
-    getAllRosterPlayers(),
+    supabase
+      .from("match_participants")
+      .select("user_id, matches!inner(status)")
+      .eq("matches.status", "confirmed"),
   ]);
 
   if (profilesError) {
     console.error("getLeaderboard profiles:", profilesError.message);
   }
 
+  const activePlayerIds = new Set((activeRows ?? []).map((row) => row.user_id));
+
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
   const profileEntries = await Promise.all(
-    (profiles ?? []).map((profile) => buildProfileEntry(supabase, profile, monthStart))
+    (profiles ?? [])
+      .filter((profile) => activePlayerIds.has(profile.id))
+      .map((profile) => buildProfileEntry(supabase, profile, monthStart))
   );
 
-  const claimedRosterIds = new Set(
-    (profiles ?? []).map((p) => p.roster_player_id).filter(Boolean) as string[]
-  );
-
-  const unclaimedEntries = roster
-    .filter((r) => !r.claimed_by && !claimedRosterIds.has(r.id))
-    .map(unclaimedRosterToEntry);
-
-  return [...profileEntries, ...unclaimedEntries].sort((a, b) => b.rating - a.rating);
+  return profileEntries.sort((a, b) => b.rating - a.rating);
 }

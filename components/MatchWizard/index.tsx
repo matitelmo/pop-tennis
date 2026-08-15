@@ -91,7 +91,7 @@ export function MatchWizard({ currentUserId }: Props) {
         team1Ids,
         team2Ids,
         winningTeam,
-        pending: true,
+        pending: false,
         summary: result.summary,
       });
       setPreviewError(null);
@@ -193,7 +193,7 @@ export function MatchWizard({ currentUserId }: Props) {
       team1Ids,
       team2Ids,
       winningTeam,
-      pending: true,
+      pending: false,
       summary: result.summary,
     });
   };
@@ -251,8 +251,7 @@ export function MatchWizard({ currentUserId }: Props) {
       {step === 2 && (
         <div className="space-y-6">
           <p className="rounded-xl bg-surface-glass px-4 py-3 text-sm text-zinc-400">
-            Podés cargar partidos de otros sin incluirte. Cualquier jugador del partido puede
-            confirmar el resultado.
+            Elegí los jugadores de cada equipo. Podés cargar partidos aunque no hayas jugado vos.
           </p>
           <PlayerPicker
             title="Equipo 1"

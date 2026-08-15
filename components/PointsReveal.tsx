@@ -7,7 +7,6 @@ import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { TercerTiempoModal } from "@/components/InAppNotifications";
 import { Button } from "@/components/ui/Button";
 import { buildMatchShareText, shareViaWhatsApp } from "@/lib/share";
-import { CONFIRMATION_HOURS } from "@/lib/constants";
 import { getMatchLabel, type MatchPointSummary } from "@/lib/match-labels";
 import { cn } from "@/lib/utils";
 import type { SetScore } from "@/types/database";
@@ -131,14 +130,11 @@ export function PointsReveal({
           onClick={(e) => e.stopPropagation()}
         >
           <h2 className="mb-2 text-center text-2xl font-black text-accent">
-            {pending ? "Resultado enviado" : "¡Partido confirmado!"}
+            ¡Partido cargado!
           </h2>
-          {pending && (
-            <p className="mb-4 text-center text-body">
-              Los puntos ya se actualizaron en el ranking. Tu rival tiene {CONFIRMATION_HOURS}h
-              para confirmar o proponer otro resultado.
-            </p>
-          )}
+          <p className="mb-4 text-center text-body">
+            Los puntos ya están en el ranking.
+          </p>
           {summary?.tags.includes("Partido de la Semana") && (
             <p className="mb-3 text-center text-xs font-bold text-accent">
               Bonus Partido de la Semana ×1.25
@@ -169,9 +165,7 @@ export function PointsReveal({
                     <span className="font-medium text-white">{names[id]}</span>
                     <AnimatedDelta value={delta} pending={pending} />
                   </div>
-                  <p className="mt-1 text-caption">
-                    {pending ? `${label} (provisional)` : label}
-                  </p>
+                  <p className="mt-1 text-caption">{label}</p>
                 </div>
               );
             })}

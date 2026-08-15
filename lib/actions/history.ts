@@ -54,18 +54,21 @@ function collectParticipantIds(matches: Match[]): string[] {
   return Array.from(ids);
 }
 
-function mapPendingItem(match: Match, userId: string, nameMap: Record<string, string>): HistoryItem {
-  const changes = (match.rating_changes ?? {}) as Record<string, number>;
-  const inWinners = (match.winner_ids ?? []).includes(userId);
-  const inLosers = (match.loser_ids ?? []).includes(userId);
+function mapParticipationItem(row: {
+  rating_delta: number;
+  team: string;
+  matches: unknown;
+}): HistoryItem | null {
+  const match = row.matches as Match | null;
+  if (!match?.id || match.status !== "confirmed") return null;
 
   return {
-    rating_delta: changes[userId] ?? null,
-    team: inWinners ? "winner" : inLosers ? "loser" : null,
+    rating_delta: row.rating_delta,
+    team: row.team as "winner" | "loser",
     match,
-    opponentNames: getOpponentIdsFromMatch(match, userId).map((id) => nameMap[id] ?? "?"),
-    headline: buildHeadline(match, nameMap),
-    isPending: true,
+    opponentNames: [] as string[],
+    headline: "",
+    isPending: false,
   };
 }
 
@@ -94,45 +97,17 @@ export async function getPersonalMatchHistory(userId: string): Promise<MatchHist
     .eq("user_id", userId)
     .order("created_at", { ascending: false, referencedTable: "matches" });
 
-  const confirmed: HistoryItem[] = (participations ?? [])
-    .map((row) => {
-      const match = row.matches as unknown as Match;
-      return {
-        rating_delta: row.rating_delta,
-        team: row.team as "winner" | "loser",
-        match,
-        opponentNames: [] as string[],
-        headline: "",
-        isPending: false,
-      };
-    })
-    .filter((item) => item.match?.id && item.match.status === "confirmed");
+  const confirmed = (participations ?? [])
+    .map((row) => mapParticipationItem(row))
+    .filter((item): item is HistoryItem => item !== null);
 
-  const { data: pendingMatches } = await supabase
-    .from("matches")
-    .select("*")
-    .in("status", ["pending", "counter_proposed"])
-    .order("created_at", { ascending: false });
+  const nameMap = await loadProfileNames(collectParticipantIds(confirmed.map((item) => item.match)));
 
-  const pending: HistoryItem[] = (pendingMatches ?? [])
-    .filter((match) => {
-      const team1 = (match.team1_ids ?? []) as string[];
-      const team2 = (match.team2_ids ?? []) as string[];
-      return [...team1, ...team2].includes(userId);
-    })
-    .map((match) => mapPendingItem(match as Match, userId, {}));
-
-  const allMatches = [...confirmed.map((item) => item.match), ...pending.map((item) => item.match)];
-  const nameMap = await loadProfileNames(collectParticipantIds(allMatches));
-
-  const items = [...pending, ...confirmed]
+  const items = confirmed
     .map((item) => ({
       ...item,
       headline: buildHeadline(item.match, nameMap),
-      opponentNames:
-        item.opponentNames.length > 0
-          ? item.opponentNames
-          : getOpponentIdsFromMatch(item.match, userId).map((id) => nameMap[id] ?? "?"),
+      opponentNames: getOpponentIdsFromMatch(item.match, userId).map((id) => nameMap[id] ?? "?"),
     }))
     .sort(
       (a, b) =>
@@ -148,7 +123,7 @@ export async function getGroupMatchHistory(): Promise<MatchHistoryResult> {
   const { data: matches } = await supabase
     .from("matches")
     .select("*")
-    .in("status", ["confirmed", "pending", "counter_proposed"])
+    .eq("status", "confirmed")
     .order("created_at", { ascending: false });
 
   const typedMatches = (matches ?? []) as Match[];
@@ -160,7 +135,7 @@ export async function getGroupMatchHistory(): Promise<MatchHistoryResult> {
     match,
     opponentNames: [],
     headline: buildHeadline(match, nameMap),
-    isPending: match.status === "pending" || match.status === "counter_proposed",
+    isPending: false,
   }));
 
   return { items, profileNames: nameMap };

@@ -263,6 +263,9 @@ export function RulesGuide() {
       <Section title="Ranking" emoji="📊">
         <ul className="list-inside list-disc space-y-2 text-zinc-400">
           <li>
+            Solo aparecen jugadores que ya jugaron al menos un partido confirmado.
+          </li>
+          <li>
             <strong className="text-zinc-200">Histórico:</strong> orden por puntaje
             actual.
           </li>

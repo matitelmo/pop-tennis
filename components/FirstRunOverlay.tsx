@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
-import { CONFIRMATION_HOURS } from "@/lib/constants";
 
 export function FirstRunOverlay() {
   const [show, setShow] = useState(false);
@@ -32,13 +31,13 @@ export function FirstRunOverlay() {
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-black text-accent-foreground">
             2
           </span>
-          Tu rival tiene {CONFIRMATION_HOURS}h para confirmar o proponer otro score
+          Los puntos se aplican al instante en el ranking
         </li>
         <li className="flex gap-3">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-black text-accent-foreground">
             3
           </span>
-          Confirmado → subís o bajás en el ranking. Meta: 1 partido por semana
+          Aparecés en el torneo cuando jugás tu primer partido. Meta: 1 partido por semana
         </li>
       </ol>
       <div className="mt-6 flex gap-2">

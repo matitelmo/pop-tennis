@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { formatDate, formatFormat } from "@/lib/utils";
 import { formatSetScoresLine, formatTeamName } from "@/lib/match/score-display";
-import { CONFIRMATION_HOURS } from "@/lib/constants";
 import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -68,9 +67,7 @@ export function MatchHistoryList({
               className="w-full rounded-2xl border border-border-subtle bg-surface-glass p-4 text-left transition active:scale-[0.99] hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <div className="flex items-center justify-between">
-                {item.isPending ? (
-                  <Badge variant="warning">Pendiente confirmación</Badge>
-                ) : isGroup ? (
+                {isGroup ? (
                   <Badge variant="default">Confirmado</Badge>
                 ) : (
                   <Badge variant={won ? "accent" : "danger"}>{won ? "Victoria" : "Derrota"}</Badge>
@@ -134,11 +131,6 @@ export function MatchHistoryList({
             <p className="mt-2 text-sm text-zinc-500">
               {formatFormat(selected.match.format)} · {formatDate(selected.match.created_at)}
             </p>
-            {selected.isPending && (
-              <p className="mt-3 text-sm text-amber-400">
-                Esperando confirmación del rival ({CONFIRMATION_HOURS}h)
-              </p>
-            )}
             {!isGroup && selected.rating_delta !== null && (
               <p
                 className={`mt-3 text-lg font-black tabular-nums ${
