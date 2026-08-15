@@ -56,12 +56,18 @@ export function buildMatchPointSummary(params: {
   }
 
   const formatLabel = formatFormat(params.format);
-  if (params.multipliers.format >= 1.5) {
+  if (params.format.endsWith("bo1")) {
+    details.push(`${formatLabel} — partido corto, movimiento más chico`);
+    tags.push("Un set");
+  } else if (params.multipliers.format >= 1.5) {
     details.push(`${formatLabel} — singles largo, vale más`);
     tags.push("Singles Bo5");
   } else if (params.multipliers.format >= 1.2) {
     details.push(`${formatLabel} — singles, vale un poco más`);
     tags.push("Singles");
+  } else if (params.multipliers.format < 0.7) {
+    details.push(`${formatLabel} — dobles corto, movimiento mínimo`);
+    tags.push("Dobles 1 set");
   } else if (params.multipliers.format < 1) {
     details.push(`${formatLabel} — movimiento un poco más chico`);
     tags.push("Dobles Bo3");

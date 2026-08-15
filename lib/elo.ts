@@ -24,9 +24,13 @@ export function getFormatMultiplier(format: MatchFormat): number {
 }
 
 export function getSetsMultiplier(format: MatchFormat, setScores: SetScore[]): number {
+  if (format.endsWith("bo1")) return 1.0;
+
   const winnerSets = setScores.filter((s) => s.p1 > s.p2).length;
   const isBo5 = format.endsWith("bo5");
-  const isWalkover = isBo5 ? winnerSets === 3 && setScores.length === 3 : winnerSets === 2 && setScores.length === 2;
+  const isWalkover = isBo5
+    ? winnerSets === 3 && setScores.length === 3
+    : winnerSets === 2 && setScores.length === 2;
   return isWalkover ? 1.2 : 1.0;
 }
 
@@ -64,11 +68,11 @@ export function calculateEloDelta(params: {
 
 export function determineWinnerFromSets(
   setScores: SetScore[],
-  bestOf: 3 | 5
+  bestOf: 1 | 3 | 5
 ): { winnerSets: number; loserSets: number; isComplete: boolean } {
   const winnerSets = setScores.filter((s) => s.p1 > s.p2).length;
   const loserSets = setScores.filter((s) => s.p2 > s.p1).length;
-  const setsToWin = bestOf === 5 ? 3 : 2;
+  const setsToWin = bestOf === 1 ? 1 : bestOf === 5 ? 3 : 2;
   const isComplete = winnerSets === setsToWin || loserSets === setsToWin;
   return { winnerSets, loserSets, isComplete };
 }

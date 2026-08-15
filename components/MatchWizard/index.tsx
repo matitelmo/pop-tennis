@@ -42,7 +42,7 @@ type RevealState = {
 export function MatchWizard({ currentUserId }: Props) {
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<"1v1" | "2v2">("1v1");
-  const [bestOf, setBestOf] = useState<3 | 5>(3);
+  const [bestOf, setBestOf] = useState<1 | 3 | 5>(3);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [team1Ids, setTeam1Ids] = useState<string[]>([]);
   const [team2Ids, setTeam2Ids] = useState<string[]>([]);
@@ -113,18 +113,13 @@ export function MatchWizard({ currentUserId }: Props) {
   ]);
 
   useEffect(() => {
-    getAllProfiles().then((data) => {
-      setProfiles(data);
-      if (currentUserId && data.some((p) => p.id === currentUserId)) {
-        setTeam1Ids([currentUserId]);
-      }
-    });
-  }, [currentUserId]);
+    getAllProfiles().then(setProfiles);
+  }, []);
 
   useEffect(() => {
-    setTeam1Ids(currentUserId ? [currentUserId] : []);
+    setTeam1Ids([]);
     setTeam2Ids([]);
-  }, [mode, currentUserId]);
+  }, [mode]);
 
   useEffect(() => {
     setSetScores((prev) => {
@@ -139,7 +134,7 @@ export function MatchWizard({ currentUserId }: Props) {
 
   function resetWizard() {
     setStep(1);
-    setTeam1Ids(currentUserId ? [currentUserId] : []);
+    setTeam1Ids([]);
     setTeam2Ids([]);
     setSetScores([{ p1: 6, p2: 4 }]);
     setPreview(null);
@@ -230,19 +225,19 @@ export function MatchWizard({ currentUserId }: Props) {
           </div>
           <div>
             <p className="mb-3 text-sm font-medium text-zinc-400">Formato</p>
-            <div className="grid grid-cols-2 gap-3">
-              {([3, 5] as const).map((bo) => (
+            <div className="grid grid-cols-3 gap-2">
+              {([1, 3, 5] as const).map((bo) => (
                 <button
                   key={bo}
                   type="button"
                   onClick={() => setBestOf(bo)}
-                  className={`min-h-[52px] rounded-2xl border font-bold transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  className={`min-h-[52px] rounded-2xl border px-2 font-bold transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                     bestOf === bo
                       ? "border-accent bg-accent-muted text-accent"
                       : "border-border bg-surface-glass text-zinc-300"
                   }`}
                 >
-                  Mejor de {bo}
+                  {bo === 1 ? "1 set" : `Bo${bo}`}
                 </button>
               ))}
             </div>
@@ -255,6 +250,10 @@ export function MatchWizard({ currentUserId }: Props) {
 
       {step === 2 && (
         <div className="space-y-6">
+          <p className="rounded-xl bg-surface-glass px-4 py-3 text-sm text-zinc-400">
+            Podés cargar partidos de otros sin incluirte. Cualquier jugador del partido puede
+            confirmar el resultado.
+          </p>
           <PlayerPicker
             title="Equipo 1"
             profiles={profiles}

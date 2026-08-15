@@ -107,7 +107,7 @@ export async function previewMatchDelta(
   const ratingsMap = await fetchRatingsForIds(allIds);
 
   let isWeeklyMatch = false;
-  if (user) {
+  if (user && allIds.includes(user.id)) {
     const opponentIds = getOpponentTeamIds(user.id, input.team1Ids, input.team2Ids);
     isWeeklyMatch =
       input.format.startsWith("1v1_") &&
@@ -137,13 +137,14 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
   if (!user) return { success: false, error: "No autenticado" };
 
   const allIds = [...input.team1Ids, ...input.team2Ids];
-  if (!allIds.includes(user.id)) {
-    return { success: false, error: "Tenés que ser participante del partido" };
-  }
-
   const ratingsMap = await fetchRatingsForIds(allIds);
-  const opponentIds = getOpponentTeamIds(user.id, input.team1Ids, input.team2Ids);
+
+  const isParticipant = allIds.includes(user.id);
+  const opponentIds = isParticipant
+    ? getOpponentTeamIds(user.id, input.team1Ids, input.team2Ids)
+    : [];
   const isWeeklyMatch =
+    isParticipant &&
     input.format.startsWith("1v1_") &&
     (await isWeeklyMatchOpponent(user.id, opponentIds));
 

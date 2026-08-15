@@ -1,6 +1,12 @@
 export type SkillLevel = "beginner" | "intermediate" | "advanced" | "expert";
 
-export type MatchFormat = "1v1_bo3" | "1v1_bo5" | "2v2_bo3" | "2v2_bo5";
+export type MatchFormat =
+  | "1v1_bo1"
+  | "1v1_bo3"
+  | "1v1_bo5"
+  | "2v2_bo1"
+  | "2v2_bo3"
+  | "2v2_bo5";
 
 export type SetScore = { p1: number; p2: number };
 

@@ -7,13 +7,14 @@ import { Card } from "@/components/ui/Card";
 import {
   canAddSet,
   getSetValidationError,
+  type MatchBestOf,
 } from "@/lib/match/set-scores";
 import type { SetScore } from "@/types/database";
 
 type Props = {
   setScores: SetScore[];
   onChange: (scores: SetScore[]) => void;
-  bestOf: 3 | 5;
+  bestOf: MatchBestOf;
   team1Label?: string;
   team2Label?: string;
 };

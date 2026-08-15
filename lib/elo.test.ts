@@ -25,6 +25,11 @@ describe("multipliers", () => {
       ])
     ).toBe(1.2);
   });
+
+  it("uses neutral sets multiplier for one-set formats", () => {
+    expect(getSetsMultiplier("1v1_bo1", [{ p1: 6, p2: 4 }])).toBe(1.0);
+    expect(getSetsMultiplier("2v2_bo1", [{ p1: 6, p2: 4 }])).toBe(1.0);
+  });
 });
 
 describe("calculateEloDelta", () => {
@@ -70,6 +75,29 @@ describe("calculateEloDelta", () => {
     expect(result.multipliers.format).toBe(1.0);
     expect(result.multipliers.sets).toBe(1.2);
     expect(result.multipliers.weekly).toBe(1);
+  });
+
+  it("awards fewer points for one-set formats", () => {
+    const oneSet = calculateEloDelta({
+      winnerRatings: [1200],
+      loserRatings: [1200],
+      format: "1v1_bo1",
+      setScores: [{ p1: 6, p2: 4 }],
+    });
+
+    const threeSet = calculateEloDelta({
+      winnerRatings: [1200],
+      loserRatings: [1200],
+      format: "1v1_bo3",
+      setScores: [
+        { p1: 6, p2: 4 },
+        { p1: 4, p2: 6 },
+        { p1: 7, p2: 5 },
+      ],
+    });
+
+    expect(oneSet.delta).toBeLessThan(threeSet.delta);
+    expect(oneSet.multipliers.format).toBe(0.9);
   });
 
   it("applies weekly win multiplier only to winner delta magnitude", () => {

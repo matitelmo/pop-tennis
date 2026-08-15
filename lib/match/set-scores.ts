@@ -1,6 +1,15 @@
 import type { SetScore } from "@/types/database";
 
-export function setsToWinMatch(bestOf: 3 | 5): number {
+export type MatchBestOf = 1 | 3 | 5;
+
+export function bestOfFromFormat(format: string): MatchBestOf {
+  if (format.endsWith("bo1")) return 1;
+  if (format.endsWith("bo5")) return 5;
+  return 3;
+}
+
+export function setsToWinMatch(bestOf: MatchBestOf): number {
+  if (bestOf === 1) return 1;
   return bestOf === 5 ? 3 : 2;
 }
 
@@ -53,24 +62,29 @@ export function countSetWins(setScores: SetScore[]): { team1: number; team2: num
   return { team1, team2 };
 }
 
-export function isMatchDecided(setScores: SetScore[], bestOf: 3 | 5): boolean {
+export function isMatchDecided(setScores: SetScore[], bestOf: MatchBestOf): boolean {
   const { team1, team2 } = countSetWins(setScores);
   const needed = setsToWinMatch(bestOf);
   return team1 >= needed || team2 >= needed;
 }
 
-export function canAddSet(setScores: SetScore[], bestOf: 3 | 5): boolean {
+export function canAddSet(setScores: SetScore[], bestOf: MatchBestOf): boolean {
+  if (bestOf === 1) return false;
   if (setScores.length >= bestOf) return false;
   return !isMatchDecided(setScores, bestOf);
 }
 
 export function validateMatchScores(
   setScores: SetScore[],
-  bestOf: 3 | 5,
+  bestOf: MatchBestOf,
   winningTeam: 1 | 2
 ): string | null {
   if (setScores.length === 0) {
     return "Cargá al menos un set";
+  }
+
+  if (bestOf === 1 && setScores.length !== 1) {
+    return "Un partido a un set tiene que tener exactamente un set";
   }
 
   for (let i = 0; i < setScores.length; i++) {
@@ -96,6 +110,9 @@ export function validateMatchScores(
   const team2Won = team2 === needed && team2 > team1;
 
   if (!team1Won && !team2Won) {
+    if (bestOf === 1) {
+      return "El set tiene que tener un ganador definido";
+    }
     return `Al mejor de ${bestOf} hace falta ganar ${needed} sets para cerrar el partido`;
   }
 
@@ -108,8 +125,4 @@ export function validateMatchScores(
   }
 
   return null;
-}
-
-export function bestOfFromFormat(format: string): 3 | 5 {
-  return format.endsWith("bo5") ? 5 : 3;
 }

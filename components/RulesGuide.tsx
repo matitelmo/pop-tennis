@@ -166,6 +166,11 @@ export function RulesGuide() {
             multiplier={`×${FORMAT_MULTIPLIERS["1v1_bo3"]}`}
           />
           <MultiplierRow
+            label="Singles · Un set"
+            detail="1v1 a 1 set"
+            multiplier={`×${FORMAT_MULTIPLIERS["1v1_bo1"]}`}
+          />
+          <MultiplierRow
             label="Dobles · Mejor de 5"
             detail="2v2 al Bo5"
             multiplier={`×${FORMAT_MULTIPLIERS["2v2_bo5"]}`}
@@ -175,11 +180,16 @@ export function RulesGuide() {
             detail="2v2 al Bo3"
             multiplier={`×${FORMAT_MULTIPLIERS["2v2_bo3"]}`}
           />
+          <MultiplierRow
+            label="Dobles · Un set"
+            detail="2v2 a 1 set"
+            multiplier={`×${FORMAT_MULTIPLIERS["2v2_bo1"]}`}
+          />
         </div>
       </Section>
 
       <Section title="Sets corridos" emoji="🏆">
-        <p>¿Ganaste sin regalar sets? Bonus.</p>
+        <p>¿Ganaste sin regalar sets? Bonus (solo en Bo3 y Bo5).</p>
         <div className="space-y-2">
           <MultiplierRow
             label="Paseo / Baile"

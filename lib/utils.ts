@@ -54,8 +54,10 @@ export function formatRelativeTime(dateStr: string): string {
 
 export function formatFormat(format: string): string {
   const map: Record<string, string> = {
+    "1v1_bo1": "1v1 · 1 set",
     "1v1_bo3": "1v1 · Bo3",
     "1v1_bo5": "1v1 · Bo5",
+    "2v2_bo1": "2v2 · 1 set",
     "2v2_bo3": "2v2 · Bo3",
     "2v2_bo5": "2v2 · Bo5",
   };

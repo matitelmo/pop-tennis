@@ -16,8 +16,10 @@ export const SKILL_LEVELS: {
 export const FORMAT_MULTIPLIERS: Record<MatchFormat, number> = {
   "1v1_bo5": 1.5,
   "1v1_bo3": 1.2,
+  "1v1_bo1": 0.9,
   "2v2_bo5": 1.0,
   "2v2_bo3": 0.8,
+  "2v2_bo1": 0.6,
 };
 
 export const WEEKLY_MATCH_WIN_MULTIPLIER = 1.25;

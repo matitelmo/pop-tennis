@@ -98,6 +98,23 @@ describe("canAddSet", () => {
 });
 
 describe("validateMatchScores", () => {
+  it("accepts complete bo1 match", () => {
+    expect(validateMatchScores([{ p1: 6, p2: 4 }], 1, 1)).toBeNull();
+  });
+
+  it("rejects second set in bo1", () => {
+    expect(
+      validateMatchScores(
+        [
+          { p1: 6, p2: 4 },
+          { p1: 6, p2: 2 },
+        ],
+        1,
+        1
+      )
+    ).toContain("exactamente un set");
+  });
+
   it("accepts complete bo3 match", () => {
     expect(
       validateMatchScores(
