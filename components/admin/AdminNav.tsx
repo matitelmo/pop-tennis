@@ -16,26 +16,34 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
-      {links.map((link) => {
-        const active = link.exact
-          ? pathname === link.href
-          : pathname === link.href || pathname.startsWith(`${link.href}/`);
-        return (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={cn(
-              "rounded-lg px-3 py-2 text-sm font-medium transition",
-              active
-                ? "bg-accent/20 text-accent"
-                : "text-zinc-400 hover:bg-white/5 hover:text-white"
-            )}
-          >
-            {link.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="space-y-3 border-b border-white/10 pb-4">
+      <nav className="flex flex-wrap gap-2">
+        {links.map((link) => {
+          const active = link.exact
+            ? pathname === link.href
+            : pathname === link.href || pathname.startsWith(`${link.href}/`);
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "rounded-lg px-3 py-2 text-sm font-medium transition",
+                active
+                  ? "bg-accent/20 text-accent"
+                  : "text-zinc-400 hover:bg-white/5 hover:text-white"
+              )}
+            >
+              {link.label}
+            </Link>
+          );
+        })}
+      </nav>
+      <p className="text-xs text-zinc-500">
+        Estás en modo admin.{" "}
+        <Link href="/communities" className="text-zinc-400 underline hover:text-white">
+          Cambiar a vista jugador
+        </Link>
+      </p>
+    </div>
   );
 }

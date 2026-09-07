@@ -10,6 +10,11 @@ function isAdminUser(profile: Profile | null): profile is Profile {
   return Boolean(profile && adminId && profile.id === adminId);
 }
 
+export async function getIsAdmin(): Promise<boolean> {
+  const profile = await getCurrentUserProfile();
+  return isAdminUser(profile);
+}
+
 export async function requireAdmin(): Promise<Profile> {
   const supabase = await createClient();
   const {
@@ -22,7 +27,7 @@ export async function requireAdmin(): Promise<Profile> {
 
   const profile = await getCurrentUserProfile();
   if (!isAdminUser(profile)) {
-    redirect("/communities");
+    redirect("/communities?error=not-admin");
   }
   return profile;
 }

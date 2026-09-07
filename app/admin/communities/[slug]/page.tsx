@@ -16,7 +16,7 @@ export default async function AdminCommunityDetailPage({ params }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-white">{community.name}</h2>
+        <h2 className="text-lg font-bold text-white">Configuración</h2>
         <Link href={`/admin/communities/${slug}/members`}>
           <Button size="sm" variant="secondary">
             Miembros
