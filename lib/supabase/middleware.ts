@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   DEFAULT_COMMUNITY_SLUG,
   isCommunitySlug,
+  isReservedAppPath,
   LEGACY_MAIN_PATHS,
 } from "@/lib/community/paths";
 import { isValidSlugFormat } from "@/lib/community/slug-format";
@@ -57,7 +58,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const isCommunityRoute = isValidSlugFormat(firstSegment);
+  const isCommunityRoute =
+    isValidSlugFormat(firstSegment) && !isReservedAppPath(firstSegment);
   const communitySlug = isCommunityRoute ? firstSegment : null;
   const subPath = isCommunityRoute ? `/${segments.slice(1).join("/")}` : path;
 
@@ -106,6 +108,7 @@ export async function updateSession(request: NextRequest) {
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.searchParams.set("next", path);
     if (communitySlug) {
       url.searchParams.set("community", communitySlug);
     }
@@ -113,6 +116,13 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
+    const nextPath = request.nextUrl.searchParams.get("next");
+    if (nextPath?.startsWith("/") && !nextPath.startsWith("//")) {
+      const url = request.nextUrl.clone();
+      url.pathname = nextPath;
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
     const url = request.nextUrl.clone();
     const redirectCommunity =
       request.nextUrl.searchParams.get("community") ?? defaultCommunity;

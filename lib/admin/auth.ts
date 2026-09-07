@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { getCurrentUserProfile } from "@/lib/actions/auth";
+import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/types/database";
 
 function isAdminUser(profile: Profile | null): profile is Profile {
@@ -10,6 +11,15 @@ function isAdminUser(profile: Profile | null): profile is Profile {
 }
 
 export async function requireAdmin(): Promise<Profile> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?next=/admin");
+  }
+
   const profile = await getCurrentUserProfile();
   if (!isAdminUser(profile)) {
     redirect("/communities");

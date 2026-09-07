@@ -28,3 +28,17 @@ export const LEGACY_MAIN_PATHS = [
   "reglas",
   "subscribe",
 ] as const;
+
+/** First URL segments that are app routes, not community slugs. */
+export const RESERVED_APP_PATHS = [
+  "admin",
+  "communities",
+  "login",
+  "register",
+  "join",
+  "api",
+] as const;
+
+export function isReservedAppPath(segment: string): boolean {
+  return (RESERVED_APP_PATHS as readonly string[]).includes(segment);
+}

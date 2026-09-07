@@ -37,9 +37,14 @@ export async function login(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const communitySlug = await resolveCommunitySlug(formData);
+  const nextPath = (formData.get("next") as string | null)?.trim();
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: error.message };
+
+  if (nextPath?.startsWith("/") && !nextPath.startsWith("//")) {
+    redirect(nextPath);
+  }
 
   redirect(communityPath(communitySlug, "ranking"));
 }
