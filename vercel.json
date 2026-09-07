@@ -6,11 +6,11 @@
     },
     {
       "path": "/api/cron/confirm-matches",
-      "schedule": "0 * * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/match-reminders",
-      "schedule": "0 * * * *"
+      "schedule": "0 12 * * *"
     },
     {
       "path": "/api/cron/badges",
