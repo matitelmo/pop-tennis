@@ -1,12 +1,12 @@
 import { revalidatePath } from "next/cache";
+import { isValidSlugFormat } from "@/lib/community/slug-format";
 
-export const COMMUNITY_SLUGS = ["wild-on", "venice-beach"] as const;
-export type CommunitySlug = (typeof COMMUNITY_SLUGS)[number];
+export type CommunitySlug = string;
 
-export const DEFAULT_COMMUNITY_SLUG: CommunitySlug = "wild-on";
+export const DEFAULT_COMMUNITY_SLUG = "wild-on";
 
 export function isCommunitySlug(slug: string): slug is CommunitySlug {
-  return (COMMUNITY_SLUGS as readonly string[]).includes(slug);
+  return isValidSlugFormat(slug);
 }
 
 export function communityPath(slug: string, segment: string): string {

@@ -29,8 +29,8 @@ export function RosterRegisterForm({ communitySlug, communityName }: Props) {
   const [skillLevel, setSkillLevel] = useState<SkillLevel>("intermediate");
 
   useEffect(() => {
-    getAvailableRosterPlayers().then(setRoster);
-  }, []);
+    getAvailableRosterPlayers(communitySlug).then(setRoster);
+  }, [communitySlug]);
 
   const selectedPreset = roster.find((r) => r.id === selectedId);
   const ratingPreview = SKILL_LEVELS.find((l) => l.value === skillLevel)?.rating ?? 1000;

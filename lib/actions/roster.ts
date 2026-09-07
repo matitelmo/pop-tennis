@@ -1,6 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/admin";
+import { getCommunityBySlug } from "@/lib/community/context";
 import type { RosterPlayer as DbRosterPlayer } from "@/types/database";
 
 export type RosterPlayer = {
@@ -12,23 +13,27 @@ export type RosterPlayer = {
   claimed_by: string | null;
 };
 
-export async function getAllRosterPlayers(): Promise<DbRosterPlayer[]> {
+async function getRosterForCommunityId(communityId: string): Promise<DbRosterPlayer[]> {
   const admin = createServiceClient();
   const { data, error } = await admin
     .from("roster_players")
     .select("*")
+    .eq("community_id", communityId)
     .order("display_name");
 
   if (error) {
-    console.error("getAllRosterPlayers:", error.message);
+    console.error("getRosterForCommunityId:", error.message);
     return [];
   }
 
   return data ?? [];
 }
 
-export async function getAvailableRosterPlayers(): Promise<RosterPlayer[]> {
-  const players = await getAllRosterPlayers();
+export async function getAvailableRosterPlayers(communitySlug: string): Promise<RosterPlayer[]> {
+  const community = await getCommunityBySlug(communitySlug);
+  if (!community) return [];
+
+  const players = await getRosterForCommunityId(community.id);
   return players
     .filter((p) => !p.claimed_by)
     .map((p) => ({
@@ -45,11 +50,15 @@ export async function getAvailableRosterPlayers(): Promise<RosterPlayer[]> {
     });
 }
 
-export async function isDisplayNameTaken(name: string): Promise<boolean> {
+export async function isDisplayNameTaken(
+  name: string,
+  communityId: string
+): Promise<boolean> {
   const admin = createServiceClient();
   const { data } = await admin
     .from("roster_players")
     .select("id")
+    .eq("community_id", communityId)
     .ilike("display_name", name.trim())
     .maybeSingle();
 

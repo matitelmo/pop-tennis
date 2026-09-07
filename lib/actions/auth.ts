@@ -128,6 +128,7 @@ async function registerRoster(
     const { data: existing } = await admin
       .from("roster_players")
       .select("id")
+      .eq("community_id", communityId)
       .ilike("display_name", displayName)
       .maybeSingle();
 
@@ -139,6 +140,7 @@ async function registerRoster(
     const { data: created, error: createError } = await admin
       .from("roster_players")
       .insert({
+        community_id: communityId,
         display_name: displayName,
         suggested_skill_level: skillLevel,
         suggested_rating: rating,

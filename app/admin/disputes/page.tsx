@@ -1,17 +1,8 @@
-import { redirect } from "next/navigation";
-import { getCurrentUserProfile } from "@/lib/actions/auth";
 import { getDisputedMatches } from "@/lib/actions/match";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { AdminDisputesList } from "@/components/AdminDisputesList";
-import { AppHeader } from "@/components/AppHeader";
-import { communityPath, DEFAULT_COMMUNITY_SLUG } from "@/lib/community/paths";
 
 export default async function AdminDisputesPage() {
-  const profile = await getCurrentUserProfile();
-  if (!profile || profile.id !== process.env.ADMIN_USER_ID) {
-    redirect(communityPath(DEFAULT_COMMUNITY_SLUG, "ranking"));
-  }
-
   const matches = await getDisputedMatches();
   const admin = createServiceClient();
   const allIds = matches.flatMap((m) => [
@@ -31,8 +22,8 @@ export default async function AdminDisputesPage() {
   const communitySlugs = Object.fromEntries((communities ?? []).map((c) => [c.id, c.slug]));
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
-      <AppHeader title="Disputas" subtitle="Admin" />
+    <div>
+      <h2 className="mb-4 text-lg font-bold text-white">Disputas</h2>
       <AdminDisputesList
         matches={matches}
         profileNames={profileNames}

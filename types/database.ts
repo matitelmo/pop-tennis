@@ -50,6 +50,7 @@ export type RosterPlayer = {
   claimed_by: string | null;
   claimed_at: string | null;
   created_at: string;
+  community_id: string | null;
 };
 
 export type MatchStatus = "pending" | "counter_proposed" | "disputed" | "confirmed";

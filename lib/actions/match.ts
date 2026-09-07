@@ -11,6 +11,7 @@ import {
 } from "@/lib/match/apply-match";
 import { isWeeklyMatchOpponent } from "@/lib/actions/weekly-match";
 import { getCurrentUserProfile, getUserEmail } from "@/lib/actions/auth";
+import { assertAdmin } from "@/lib/admin/auth";
 import { getCommunityBySlug, getCommunityMember } from "@/lib/community/context";
 import { revalidateCommunityPaths } from "@/lib/community/paths";
 import { createClient } from "@/lib/supabase/server";
@@ -508,10 +509,9 @@ export async function adminResolveMatch(
   matchId: string,
   action: "confirm" | "delete"
 ): Promise<{ success: boolean; error?: string }> {
-  const profile = await getCurrentUserProfile();
-  if (!profile || profile.id !== process.env.ADMIN_USER_ID) {
-    return { success: false, error: "No autorizado" };
-  }
+  const auth = await assertAdmin();
+  if (!auth.success) return { success: false, error: auth.error };
+  const { profile } = auth;
 
   const admin = createServiceClient();
   const { data: match } = await admin.from("matches").select("*").eq("id", matchId).single();
@@ -621,8 +621,8 @@ export async function getCommunityProfilesBySlug(slug: string) {
 }
 
 export async function getDisputedMatches(communityId?: string) {
-  const profile = await getCurrentUserProfile();
-  if (!profile || profile.id !== process.env.ADMIN_USER_ID) return [];
+  const auth = await assertAdmin();
+  if (!auth.success) return [];
 
   const admin = createServiceClient();
   let query = admin

@@ -1,11 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
-  COMMUNITY_SLUGS,
   DEFAULT_COMMUNITY_SLUG,
   isCommunitySlug,
   LEGACY_MAIN_PATHS,
 } from "@/lib/community/paths";
+import { isValidSlugFormat } from "@/lib/community/slug-format";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -57,9 +57,19 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const isCommunityRoute = isCommunitySlug(firstSegment);
+  const isCommunityRoute = isValidSlugFormat(firstSegment);
   const communitySlug = isCommunityRoute ? firstSegment : null;
   const subPath = isCommunityRoute ? `/${segments.slice(1).join("/")}` : path;
+
+  let communityValid = false;
+  if (communitySlug) {
+    const { data: communityRow } = await supabase
+      .from("communities")
+      .select("slug")
+      .eq("slug", communitySlug)
+      .maybeSingle();
+    communityValid = Boolean(communityRow);
+  }
 
   const isPublic =
     path.startsWith("/join") ||
@@ -79,13 +89,13 @@ export async function updateSession(request: NextRequest) {
     subPath.startsWith("/subscribe") ||
     path.startsWith("/admin");
 
-  if (communitySlug && !COMMUNITY_SLUGS.includes(communitySlug)) {
+  if (communitySlug && !communityValid) {
     const url = request.nextUrl.clone();
     url.pathname = "/communities";
     return NextResponse.redirect(url);
   }
 
-  if (communitySlug) {
+  if (communitySlug && communityValid) {
     supabaseResponse.cookies.set("last_community", communitySlug, {
       path: "/",
       maxAge: 60 * 60 * 24 * 365,

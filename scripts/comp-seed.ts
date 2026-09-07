@@ -26,9 +26,22 @@ const COMPED_EMAILS: string[] = [
   // "player2@example.com",
 ];
 
+const COMMUNITY_SLUG = process.env.COMMUNITY_SLUG ?? "venice-beach";
+
 async function main() {
   loadEnvLocal();
   const admin = createServiceClient();
+
+  const { data: community } = await admin
+    .from("communities")
+    .select("id, slug")
+    .eq("slug", COMMUNITY_SLUG)
+    .single();
+
+  if (!community) {
+    console.error(`Community not found: ${COMMUNITY_SLUG}`);
+    process.exit(1);
+  }
 
   let updated = 0;
   for (const email of COMPED_EMAILS) {
@@ -38,15 +51,21 @@ async function main() {
       console.warn(`User not found: ${email}`);
       continue;
     }
-    await admin
-      .from("profiles")
+    const { error } = await admin
+      .from("community_members")
       .update({ subscription_status: "comped" })
-      .eq("id", user.id);
-    console.log(`Comped: ${email}`);
+      .eq("community_id", community.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.warn(`Failed to comp ${email}: ${error.message}`);
+      continue;
+    }
+    console.log(`Comped: ${email} (${community.slug})`);
     updated++;
   }
 
-  console.log(`Done. ${updated} account(s) marked as comped.`);
+  console.log(`Done. ${updated} membership(s) marked as comped in ${community.slug}.`);
 }
 
 main().catch((e) => {
