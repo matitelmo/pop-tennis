@@ -27,6 +27,7 @@ import {
 import type { MatchFormat, SetScore, Profile, CommunityMember } from "@/types/database";
 import type { MatchPointSummary } from "@/lib/match-labels";
 import { formatSetScoresWithTeams, formatTeamName } from "@/lib/match/score-display";
+import { checkOpponentMatchLimit } from "@/lib/match/opponent-limit";
 
 export type SubmitMatchInput = MatchInput & { communitySlug: string };
 
@@ -72,8 +73,53 @@ export type MatchRevealData = {
   winningTeam?: 1 | 2;
 };
 
-const OPPONENT_LIMIT = 2;
-const OPPONENT_WINDOW_DAYS = 30;
+async function fetchRecentMatchesForOpponentLimit(
+  communityId: string,
+  windowDays: number
+) {
+  const admin = createServiceClient();
+  const since = new Date();
+  since.setDate(since.getDate() - windowDays);
+
+  const { data: matches } = await admin
+    .from("matches")
+    .select("team1_ids, team2_ids, status")
+    .eq("community_id", communityId)
+    .in("status", ["pending", "counter_proposed", "confirmed"])
+    .gte("created_at", since.toISOString());
+
+  return (matches ?? []).map((m) => ({
+    team1_ids: m.team1_ids as string[],
+    team2_ids: m.team2_ids as string[],
+  }));
+}
+
+async function validateOpponentMatchLimit(
+  communityId: string,
+  userId: string,
+  input: { format: MatchFormat; team1Ids: string[]; team2Ids: string[] },
+  settings: { opponent_match_limit: number; opponent_match_window_days: number }
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const allIds = [...input.team1Ids, ...input.team2Ids];
+  if (!allIds.includes(userId)) return { ok: true };
+
+  const recentMatches = await fetchRecentMatchesForOpponentLimit(
+    communityId,
+    settings.opponent_match_window_days
+  );
+
+  return checkOpponentMatchLimit({
+    settings: {
+      limit: settings.opponent_match_limit,
+      windowDays: settings.opponent_match_window_days,
+    },
+    userId,
+    team1Ids: input.team1Ids,
+    team2Ids: input.team2Ids,
+    format: input.format,
+    recentMatches,
+  });
+}
 
 async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null> {
   const admin = createServiceClient();
@@ -104,35 +150,6 @@ async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null
     team2Ids,
     winningTeam,
   };
-}
-
-async function countRecentOpponentMatches(
-  communityId: string,
-  userId: string,
-  opponentIds: string[]
-): Promise<number> {
-  if (!opponentIds.length) return 0;
-  const admin = createServiceClient();
-  const since = new Date();
-  since.setDate(since.getDate() - OPPONENT_WINDOW_DAYS);
-
-  const { data: matches } = await admin
-    .from("matches")
-    .select("team1_ids, team2_ids, status")
-    .eq("community_id", communityId)
-    .in("status", ["pending", "counter_proposed", "confirmed"])
-    .gte("created_at", since.toISOString());
-
-  let count = 0;
-  for (const m of matches ?? []) {
-    const team1 = m.team1_ids as string[];
-    const team2 = m.team2_ids as string[];
-    const all = [...team1, ...team2];
-    if (!all.includes(userId)) continue;
-    const opponents = getOpponentTeamIds(userId, team1, team2);
-    if (opponentIds.some((oid) => opponents.includes(oid))) count++;
-  }
-  return count;
 }
 
 async function notifyOpponentsToConfirm(params: {
@@ -182,6 +199,13 @@ export async function previewMatchDelta(
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (user) {
+    const limitCheck = await validateOpponentMatchLimit(community.id, user.id, input, community.settings);
+    if (!limitCheck.ok) {
+      return { success: false, error: limitCheck.error };
+    }
+  }
 
   const allIds = [...input.team1Ids, ...input.team2Ids];
   const ratingsMap = await fetchRatingsForIds(community.id, allIds);
@@ -233,6 +257,16 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
     return { success: false, error: "Formato no permitido en esta comunidad" };
   }
 
+  const limitCheck = await validateOpponentMatchLimit(
+    community.id,
+    user.id,
+    input,
+    community.settings
+  );
+  if (!limitCheck.ok) {
+    return { success: false, error: limitCheck.error };
+  }
+
   const allIds = [...input.team1Ids, ...input.team2Ids];
   const ratingsMap = await fetchRatingsForIds(community.id, allIds);
 
@@ -240,16 +274,6 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
   const opponentIds = isParticipant
     ? getOpponentTeamIds(user.id, input.team1Ids, input.team2Ids)
     : [];
-
-  if (isParticipant && opponentIds.length) {
-    const recentCount = await countRecentOpponentMatches(community.id, user.id, opponentIds);
-    if (recentCount >= OPPONENT_LIMIT) {
-      return {
-        success: false,
-        error: `Ya jugaste ${OPPONENT_LIMIT} partidos contra este rival en los últimos 30 días`,
-      };
-    }
-  }
 
   const isWeeklyMatch =
     isParticipant &&

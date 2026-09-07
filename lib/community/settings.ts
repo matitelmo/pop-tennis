@@ -13,6 +13,9 @@ export type CommunitySettings = {
   weekly_rival_mode: WeeklyRivalMode;
   signup_mode: SignupMode;
   allowed_formats: MatchFormat[];
+  /** Max matches vs same rival(s) per window; 0 = no limit. */
+  opponent_match_limit: number;
+  opponent_match_window_days: number;
 };
 
 export const DEFAULT_COMMUNITY_SETTINGS: CommunitySettings = {
@@ -24,6 +27,8 @@ export const DEFAULT_COMMUNITY_SETTINGS: CommunitySettings = {
   weekly_rival_mode: "auto",
   signup_mode: "open",
   allowed_formats: ["1v1_bo3", "1v1_bo5", "2v2_bo3", "2v2_bo5"],
+  opponent_match_limit: 0,
+  opponent_match_window_days: 30,
 };
 
 export function parseCommunitySettings(raw: unknown): CommunitySettings {
@@ -40,6 +45,12 @@ export function parseCommunitySettings(raw: unknown): CommunitySettings {
     allowed_formats: Array.isArray(s.allowed_formats)
       ? (s.allowed_formats as MatchFormat[])
       : DEFAULT_COMMUNITY_SETTINGS.allowed_formats,
+    opponent_match_limit:
+      typeof s.opponent_match_limit === "number" ? Math.max(0, s.opponent_match_limit) : 0,
+    opponent_match_window_days:
+      typeof s.opponent_match_window_days === "number"
+        ? Math.max(1, s.opponent_match_window_days)
+        : 30,
   };
 }
 

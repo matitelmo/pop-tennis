@@ -103,6 +103,53 @@ export function CommunitySettingsForm({ initial, onSubmit, showName }: Props) {
       </div>
 
       <fieldset className="space-y-2">
+        <Label>Límite de partidos vs mismo rival</Label>
+        <p className="text-xs text-zinc-500">
+          0 = sin límite (Wild On). En dobles cuenta solo si son las mismas dos parejas.
+        </p>
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <Label htmlFor="opponent_match_limit" className="text-xs text-zinc-500">
+              Máximo
+            </Label>
+            <Input
+              id="opponent_match_limit"
+              type="number"
+              min={0}
+              max={20}
+              value={settings.opponent_match_limit}
+              onChange={(e) =>
+                setSettings((s) => ({
+                  ...s,
+                  opponent_match_limit: Math.max(0, Number(e.target.value)),
+                }))
+              }
+              className="mt-1"
+            />
+          </div>
+          <div className="flex-1">
+            <Label htmlFor="opponent_match_window_days" className="text-xs text-zinc-500">
+              Ventana (días)
+            </Label>
+            <Input
+              id="opponent_match_window_days"
+              type="number"
+              min={1}
+              max={365}
+              value={settings.opponent_match_window_days}
+              onChange={(e) =>
+                setSettings((s) => ({
+                  ...s,
+                  opponent_match_window_days: Math.max(1, Number(e.target.value)),
+                }))
+              }
+              className="mt-1"
+            />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset className="space-y-2">
         <Label>Modo de registro</Label>
         <select
           className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
