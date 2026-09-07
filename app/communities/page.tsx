@@ -24,7 +24,7 @@ export default async function CommunitiesPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background px-4 py-12">
-      <div className="mx-auto max-w-lg">
+      <div className="mx-auto w-full max-w-lg lg:max-w-4xl">
         <div className="text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-muted">
             <Trophy className="h-9 w-9 text-accent" />
@@ -56,10 +56,10 @@ export default async function CommunitiesPage({ searchParams }: Props) {
           </p>
         )}
 
-        <ul className="mt-10 space-y-3">
+        <ul className="mt-10 grid gap-3 md:grid-cols-2">
           {communities.map((c) => (
             <li key={c.id}>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
+              <div className="h-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 transition hover:border-white/20 lg:hover:bg-white/[0.07]">
                 <p className="font-bold text-white">{c.name}</p>
                 <p className="mt-1 text-sm text-zinc-400">
                   {memberSlugs.has(c.slug) ? "Ya sos miembro" : "Sin membresía"}

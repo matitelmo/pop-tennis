@@ -2,43 +2,46 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Plus, Swords, Trophy, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCommunitySlug } from "@/hooks/useCommunitySlug";
-import { communityPath } from "@/lib/community/paths";
+import {
+  COMMUNITY_NAV_ITEMS,
+  getCommunityNavHref,
+  getPartidoHref,
+  PARTIDO_NAV,
+} from "@/lib/navigation/community-nav";
 
 type Props = {
   pendingCount?: number;
+  className?: string;
 };
 
-export function BottomNav({ pendingCount = 0 }: Props) {
+export function BottomNav({ pendingCount = 0, className }: Props) {
   const pathname = usePathname();
   const community = useCommunitySlug();
-
-  const sideTabs = [
-    { href: communityPath(community, "ranking"), label: "Ranking", icon: Trophy },
-    { href: communityPath(community, "historial"), label: "Historial", icon: Swords },
-    { href: communityPath(community, "reglas"), label: "Reglas", icon: BookOpen },
-    { href: communityPath(community, "perfil"), label: "Perfil", icon: User },
-  ];
-
-  const partidoHref = communityPath(community, "partido");
+  const partidoHref = getPartidoHref(community);
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border-subtle bg-surface-nav/95 backdrop-blur-lg pb-safe"
+      className={cn(
+        "fixed bottom-0 left-0 right-0 z-50 border-t border-border-subtle bg-surface-nav/95 backdrop-blur-lg pb-safe",
+        className
+      )}
       aria-label="Navegación principal"
     >
       <div className="mx-auto flex max-w-md items-end justify-around px-1 py-2">
-        {sideTabs.slice(0, 2).map(({ href, label, icon: Icon }) => (
-          <NavItem
-            key={href}
-            href={href}
-            label={label}
-            icon={Icon}
-            active={pathname.startsWith(href)}
-          />
-        ))}
+        {COMMUNITY_NAV_ITEMS.slice(0, 2).map(({ segment, label, icon: Icon }) => {
+          const href = getCommunityNavHref(community, segment);
+          return (
+            <NavItem
+              key={segment}
+              href={href}
+              label={label}
+              icon={Icon}
+              active={pathname.startsWith(href)}
+            />
+          );
+        })}
 
         <Link
           href={partidoHref}
@@ -48,8 +51,8 @@ export function BottomNav({ pendingCount = 0 }: Props) {
             pathname.startsWith(partidoHref) && "ring-2 ring-accent/50"
           )}
         >
-          <Plus className="h-7 w-7 text-accent-foreground" strokeWidth={2.5} />
-          <span className="text-[10px] font-bold text-accent-foreground">Partido</span>
+          <PARTIDO_NAV.icon className="h-7 w-7 text-accent-foreground" strokeWidth={2.5} />
+          <span className="text-[10px] font-bold text-accent-foreground">{PARTIDO_NAV.label}</span>
           {pendingCount > 0 && (
             <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-warning px-1 text-[9px] font-black text-accent-foreground">
               {pendingCount}
@@ -57,15 +60,18 @@ export function BottomNav({ pendingCount = 0 }: Props) {
           )}
         </Link>
 
-        {sideTabs.slice(2).map(({ href, label, icon: Icon }) => (
-          <NavItem
-            key={href}
-            href={href}
-            label={label}
-            icon={Icon}
-            active={pathname.startsWith(href)}
-          />
-        ))}
+        {COMMUNITY_NAV_ITEMS.slice(2).map(({ segment, label, icon: Icon }) => {
+          const href = getCommunityNavHref(community, segment);
+          return (
+            <NavItem
+              key={segment}
+              href={href}
+              label={label}
+              icon={Icon}
+              active={pathname.startsWith(href)}
+            />
+          );
+        })}
       </div>
     </nav>
   );
@@ -79,7 +85,7 @@ function NavItem({
 }: {
   href: string;
   label: string;
-  icon: typeof Trophy;
+  icon: typeof PARTIDO_NAV.icon;
   active: boolean;
 }) {
   return (

@@ -124,7 +124,7 @@ export function PointsReveal({
       >
         <div
           className={cn(
-            "w-full max-w-sm transform rounded-3xl border border-accent/30 bg-gradient-to-b from-surface-elevated to-surface-nav p-6 shadow-2xl transition-all duration-500",
+            "w-full max-w-sm transform rounded-3xl border border-accent/30 bg-gradient-to-b from-surface-elevated to-surface-nav p-6 shadow-2xl transition-all duration-500 lg:max-w-lg",
             visible ? "scale-100 opacity-100" : "scale-75 opacity-0"
           )}
           onClick={(e) => e.stopPropagation()}

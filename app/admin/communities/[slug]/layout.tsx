@@ -13,9 +13,9 @@ export default async function AdminCommunityLayout({ children, params }: Props) 
   if (!community) notFound();
 
   return (
-    <div>
+    <div className="lg:grid lg:grid-cols-[240px_1fr] lg:items-start lg:gap-8">
       <CommunityAdminNav slug={slug} name={community.name} />
-      {children}
+      <div>{children}</div>
     </div>
   );
 }

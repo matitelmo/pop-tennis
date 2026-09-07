@@ -70,36 +70,44 @@ export function MatchHistoryList({
               key={match.id}
               type="button"
               onClick={() => setSelected(item)}
-              className="w-full rounded-2xl border border-border-subtle bg-surface-glass p-4 text-left transition active:scale-[0.99] hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="w-full rounded-2xl border border-border-subtle bg-surface-glass p-4 text-left transition active:scale-[0.99] hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:flex lg:items-center lg:justify-between lg:gap-6 lg:p-5"
             >
-              <div className="flex items-center justify-between">
-                {isGroup ? (
-                  <Badge variant="default">Confirmado</Badge>
-                ) : (
-                  <Badge variant={won ? "accent" : "danger"}>{won ? "Victoria" : "Derrota"}</Badge>
-                )}
-                <span className="text-xs text-zinc-500">
-                  {formatDate(match.created_at)}
-                </span>
+              <div className="lg:min-w-0 lg:flex-1">
+                <div className="flex items-center justify-between lg:justify-start lg:gap-4">
+                  {isGroup ? (
+                    <Badge variant="default">Confirmado</Badge>
+                  ) : (
+                    <Badge variant={won ? "accent" : "danger"}>{won ? "Victoria" : "Derrota"}</Badge>
+                  )}
+                  <span className="text-xs text-zinc-500 lg:order-first">
+                    {formatDate(match.created_at)}
+                  </span>
+                </div>
+                <p className={`mt-2 text-sm text-zinc-300 lg:mt-1 ${isGroup ? "font-medium text-white" : ""}`}>
+                  {title}
+                </p>
+                <p className="mt-0.5 text-[11px] text-zinc-500 lg:hidden">
+                  {team1Name} (izq) · {team2Name} (der)
+                </p>
               </div>
-              <p className={`mt-2 text-sm text-zinc-300 ${isGroup ? "font-medium text-white" : ""}`}>
-                {title}
-              </p>
-              <p className="mt-1 font-mono text-lg text-white">{scoreStr}</p>
-              <p className="mt-0.5 text-[11px] text-zinc-500">
-                {team1Name} (izq) · {team2Name} (der)
-              </p>
-              <div className="mt-2 flex items-center justify-between text-sm">
-                <span className="text-zinc-400">{formatFormat(match.format)}</span>
-                {!isGroup && <MatchUserDelta delta={item.rating_delta} />}
+
+              <div className="mt-2 lg:mt-0 lg:flex lg:shrink-0 lg:items-center lg:gap-6">
+                <p className="font-mono text-lg text-white">{scoreStr}</p>
+                <div className="mt-2 flex items-center justify-between text-sm lg:mt-0 lg:flex-col lg:items-end lg:gap-1">
+                  <span className="text-zinc-400">{formatFormat(match.format)}</span>
+                  {!isGroup && <MatchUserDelta delta={item.rating_delta} />}
+                </div>
               </div>
+
               {isGroup && Object.keys(ratingChanges).length > 0 && (
-                <MatchParticipantPoints
-                  ratingChanges={ratingChanges}
-                  profileNames={profileNames}
-                  team1Ids={match.team1_ids ?? []}
-                  team2Ids={match.team2_ids ?? []}
-                />
+                <div className="mt-2 lg:col-span-full lg:mt-3 lg:w-full">
+                  <MatchParticipantPoints
+                    ratingChanges={ratingChanges}
+                    profileNames={profileNames}
+                    team1Ids={match.team1_ids ?? []}
+                    team2Ids={match.team2_ids ?? []}
+                  />
+                </div>
               )}
             </button>
           );
@@ -108,12 +116,12 @@ export function MatchHistoryList({
 
       {selected && (
         <div
-          className="fixed inset-0 z-[100] flex items-end bg-black/70 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-4 backdrop-blur-sm lg:items-center"
           onClick={() => setSelected(null)}
         >
           <Card
             variant="elevated"
-            className="w-full max-w-md animate-slide-up-in rounded-3xl p-6"
+            className="w-full max-w-md animate-slide-up-in rounded-3xl p-6 lg:max-w-lg lg:animate-none"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-white">Detalle del partido</h3>

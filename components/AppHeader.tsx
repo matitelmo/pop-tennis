@@ -26,7 +26,7 @@ export function AppHeader({
       className={cn(
         "mb-6",
         sticky &&
-          "sticky top-0 z-10 -mx-4 border-b border-border-subtle bg-background/95 px-4 pb-4 pt-2 backdrop-blur-lg",
+          "sticky top-0 z-10 -mx-4 border-b border-border-subtle bg-background/95 px-4 pb-4 pt-2 backdrop-blur-lg lg:-mx-8 lg:px-8",
         className
       )}
       style={{ viewTransitionName: "app-header" }}

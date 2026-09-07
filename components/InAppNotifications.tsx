@@ -79,8 +79,8 @@ export function InAppNotifications({ notifications }: Props) {
 
 export function TercerTiempoModal({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-sm animate-slide-up-in rounded-3xl border border-accent/30 bg-surface p-6 shadow-2xl">
+    <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm lg:items-center">
+      <div className="w-full max-w-sm animate-slide-up-in rounded-3xl border border-accent/30 bg-surface p-6 shadow-2xl lg:max-w-lg lg:animate-none">
         <p className="text-center text-lg font-bold text-white">Tercer tiempo</p>
         <p className="mt-2 text-center text-body">
           Terminó el partido. ¿Salen unas pupusas / burgas de festejo?

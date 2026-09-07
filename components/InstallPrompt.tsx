@@ -58,7 +58,7 @@ export function InstallPrompt() {
   }
 
   return (
-    <Card className="mb-4 border-accent/20 bg-accent-muted">
+    <Card className="mb-4 border-accent/20 bg-accent-muted lg:hidden">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <p className="font-bold text-white">Instalá Fence</p>

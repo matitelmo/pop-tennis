@@ -1,10 +1,11 @@
-import { BottomNav } from "@/components/BottomNav";
+import { AppShell } from "@/components/layout/AppShell";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { ToastProvider } from "@/components/ToastProvider";
 import { FirstRunOverlay } from "@/components/FirstRunOverlay";
 import { getCurrentUserProfile } from "@/lib/actions/auth";
 import { getPendingMatchesForUser } from "@/lib/actions/match";
-import { getCommunityBySlug } from "@/lib/community/context";
+import { getAllCommunities, getCommunityBySlug } from "@/lib/community/context";
+import { getIsAdmin } from "@/lib/admin/auth";
 import { checkGhostBadgeForUser } from "@/lib/badges";
 import { notFound } from "next/navigation";
 
@@ -19,7 +20,12 @@ export default async function MainLayout({
   const community = await getCommunityBySlug(communitySlug);
   if (!community) notFound();
 
-  const profile = await getCurrentUserProfile();
+  const [profile, communities, isAdmin] = await Promise.all([
+    getCurrentUserProfile(),
+    getAllCommunities(),
+    getIsAdmin(),
+  ]);
+
   let pendingCount = 0;
   if (profile) {
     const pending = await getPendingMatchesForUser(community.id, profile.id);
@@ -31,14 +37,17 @@ export default async function MainLayout({
 
   return (
     <ToastProvider>
-      <div className="min-h-screen overscroll-none bg-background pb-28">
-        <div className="mx-auto max-w-md px-4 pt-6">
-          <InstallPrompt />
-          {children}
-        </div>
-        <BottomNav pendingCount={pendingCount} />
-        <FirstRunOverlay />
-      </div>
+      <AppShell
+        communitySlug={communitySlug}
+        communityName={community.name}
+        communities={communities.map((c) => ({ slug: c.slug, name: c.name }))}
+        pendingCount={pendingCount}
+        isAdmin={isAdmin}
+      >
+        <InstallPrompt />
+        {children}
+      </AppShell>
+      <FirstRunOverlay />
     </ToastProvider>
   );
 }

@@ -14,14 +14,14 @@ export function Sheet({ open, onClose, children, title }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[150] flex items-end bg-black/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[150] flex items-end justify-center bg-black/70 p-4 backdrop-blur-sm lg:items-center"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div
-        className="w-full max-w-md animate-slide-up-in rounded-3xl border border-accent/30 bg-surface p-6 shadow-2xl"
+        className="w-full max-w-md animate-slide-up-in rounded-3xl border border-accent/30 bg-surface p-6 shadow-2xl lg:max-w-lg lg:animate-none"
         onClick={(e) => e.stopPropagation()}
       >
         {title && <h2 className="text-title">{title}</h2>}

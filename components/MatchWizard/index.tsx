@@ -114,6 +114,7 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
     }
   }, [
     canProceedStep2,
+    scoreValidationError,
     format,
     team1Ids,
     team2Ids,
@@ -219,10 +220,16 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
   };
 
   return (
-    <div className="space-y-6">
-      <StepIndicator steps={STEP_LABELS} current={step} />
+    <div className="app-page">
+      <div
+        className={cn(
+          step === 3 && "lg:grid lg:grid-cols-2 lg:items-start lg:gap-8"
+        )}
+      >
+        <div className="space-y-6">
+          <StepIndicator steps={STEP_LABELS} current={step} />
 
-      {step === 1 && (
+          {step === 1 && (
         <div className="space-y-6">
           <div>
             <p className="mb-3 text-sm font-medium text-zinc-400">Modo</p>
@@ -339,27 +346,12 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
             team2Label={team2Label || "Eq2"}
           />
 
-          {preview && (
-            <Card className="border-accent/20 bg-surface-elevated">
-              <p className="text-xs font-bold uppercase text-accent">Así moverían los puntos</p>
-              <div className="mt-2 space-y-1">
-                {Object.entries(preview.deltas).map(([id, delta]) => (
-                  <div key={id} className="flex justify-between text-sm">
-                    <span className="text-zinc-300">{preview.names[id]}</span>
-                    <span className="font-bold text-accent">
-                      {delta >= 0 ? "+" : ""}
-                      {delta}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              {preview.summary && <MatchPointContext summary={preview.summary} />}
-            </Card>
-          )}
-
-          {!preview && previewError && (
-            <p className="rounded-xl bg-warning/10 px-4 py-3 text-sm text-warning">{previewError}</p>
-          )}
+          <div className="lg:hidden">
+            <MatchPreviewPanel
+              preview={preview}
+              previewError={previewError}
+            />
+          </div>
 
           {error && (
             <p className="rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>
@@ -374,6 +366,14 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
           </div>
         </div>
       )}
+        </div>
+
+        {step === 3 && (
+          <div className="hidden lg:sticky lg:top-6 lg:block">
+            <MatchPreviewPanel preview={preview} previewError={previewError} />
+          </div>
+        )}
+      </div>
 
       {reveal && (
         <PointsReveal
@@ -386,6 +386,48 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
         />
       )}
     </div>
+  );
+}
+
+function MatchPreviewPanel({
+  preview,
+  previewError,
+}: {
+  preview: RevealState | null;
+  previewError: string | null;
+}) {
+  if (preview) {
+    return (
+      <Card className="border-accent/20 bg-surface-elevated">
+        <p className="text-xs font-bold uppercase text-accent">Así moverían los puntos</p>
+        <div className="mt-2 space-y-1">
+          {Object.entries(preview.deltas).map(([id, delta]) => (
+            <div key={id} className="flex justify-between text-sm">
+              <span className="text-zinc-300">{preview.names[id]}</span>
+              <span className="font-bold text-accent">
+                {delta >= 0 ? "+" : ""}
+                {delta}
+              </span>
+            </div>
+          ))}
+        </div>
+        {preview.summary && <MatchPointContext summary={preview.summary} />}
+      </Card>
+    );
+  }
+
+  if (previewError) {
+    return (
+      <p className="rounded-xl bg-warning/10 px-4 py-3 text-sm text-warning">{previewError}</p>
+    );
+  }
+
+  return (
+    <Card className="border-border-subtle bg-surface-glass">
+      <p className="text-sm text-zinc-400">
+        Completá el score para ver cómo impacta en el ranking.
+      </p>
+    </Card>
   );
 }
 
@@ -427,7 +469,7 @@ function PlayerPicker({
           className="mb-3 w-full min-h-[44px] rounded-xl border border-border bg-surface-glass px-4 text-sm text-white outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
         />
       )}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 lg:grid lg:grid-cols-3 lg:gap-2">
         {filtered.map((p) => {
           const isSelected = selected.includes(p.id);
           const isDisabled = disabled.includes(p.id);

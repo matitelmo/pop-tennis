@@ -62,7 +62,7 @@ export function LeaderboardRow({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="max-w-[9rem] truncate font-semibold text-white sm:max-w-none">
+            <p className="max-w-[9rem] truncate font-semibold text-white sm:max-w-none lg:max-w-none">
               {entry.full_name}
             </p>
             {isCurrentUser && <Badge variant="accent">Vos</Badge>}

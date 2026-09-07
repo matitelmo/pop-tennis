@@ -12,12 +12,29 @@ const links = [
   { href: "/admin/disputes", label: "Disputas" },
 ];
 
-export function AdminNav() {
+type Props = {
+  className?: string;
+  orientation?: "horizontal" | "vertical";
+};
+
+export function AdminNav({ className, orientation = "horizontal" }: Props) {
   const pathname = usePathname();
+  const isVertical = orientation === "vertical";
 
   return (
-    <div className="space-y-3 border-b border-white/10 pb-4">
-      <nav className="flex flex-wrap gap-2">
+    <div
+      className={cn(
+        "space-y-3 border-b border-white/10 pb-4",
+        isVertical && "border-b-0 pb-0",
+        className
+      )}
+    >
+      <nav
+        className={cn(
+          "flex flex-wrap gap-2",
+          isVertical && "flex-col flex-nowrap gap-1"
+        )}
+      >
         {links.map((link) => {
           const active = link.exact
             ? pathname === link.href
@@ -28,6 +45,7 @@ export function AdminNav() {
               href={link.href}
               className={cn(
                 "rounded-lg px-3 py-2 text-sm font-medium transition",
+                isVertical && "w-full",
                 active
                   ? "bg-accent/20 text-accent"
                   : "text-zinc-400 hover:bg-white/5 hover:text-white"
@@ -38,7 +56,7 @@ export function AdminNav() {
           );
         })}
       </nav>
-      <p className="text-xs text-zinc-500">
+      <p className={cn("text-xs text-zinc-500", isVertical && "mt-6 border-t border-white/10 pt-4")}>
         Estás en modo admin.{" "}
         <Link href="/communities" className="text-zinc-400 underline hover:text-white">
           Cambiar a vista jugador
