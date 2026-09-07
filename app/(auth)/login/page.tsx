@@ -28,8 +28,8 @@ export default function LoginPage() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-muted">
           <Trophy className="h-8 w-8 text-accent" />
         </div>
-        <h1 className="mt-4 text-display">Wild On Pop Tennis</h1>
-        <p className="mt-1 text-caption">Ranking de la banda</p>
+        <h1 className="mt-4 text-display">Fence</h1>
+        <p className="mt-1 text-caption">Venice Pop Tennis League</p>
       </div>
 
       <form action={handleSubmit} className="space-y-4">

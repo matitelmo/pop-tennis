@@ -19,25 +19,25 @@ export function FirstRunOverlay() {
   }
 
   return (
-    <Sheet open={show} onClose={dismiss} title="Así funciona Wild On Pop Tennis">
+    <Sheet open={show} onClose={dismiss} title="Así funciona Fence">
       <ol className="mt-4 space-y-3 text-body">
         <li className="flex gap-3">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-black text-accent-foreground">
             1
           </span>
-          Cargá el resultado del partido en <strong className="text-white">Partido</strong>
+          Suscribite y cargá partidos en <strong className="text-white">Partido</strong>
         </li>
         <li className="flex gap-3">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-black text-accent-foreground">
             2
           </span>
-          Los puntos se aplican al instante en el ranking
+          Tu rival confirma el resultado (24h máximo)
         </li>
         <li className="flex gap-3">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-black text-accent-foreground">
             3
           </span>
-          Aparecés en el torneo cuando jugás tu primer partido. Meta: 1 partido por semana
+          Aparecés en el ranking cuando confirmás tu primer partido
         </li>
       </ol>
       <div className="mt-6 flex gap-2">

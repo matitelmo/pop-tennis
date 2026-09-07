@@ -42,7 +42,7 @@ export function AppHeader({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            {title === "Wild On Pop Tennis" && (
+            {title === "Venice Pop Tennis" && (
               <Trophy className="h-6 w-6 shrink-0 text-accent" aria-hidden />
             )}
             <h1 className="text-display truncate">{title}</h1>

@@ -1,80 +1,45 @@
-# Pop Tennis — Ranking & Gamification
+# Fence — Venice Pop Tennis League
 
-PWA mobile-first para registrar partidos de Pop Tennis, calcular ranking Elo dinámico, badges y penalización por inactividad.
+Paid league platform for open drop-in pop tennis at Venice Beach. Forked from the Wild On friend-group app; **Wild On** continues separately at [pop-tennis](https://github.com/matitelmo/pop-tennis).
 
-## Stack
+## Features
 
-- Next.js 14 (App Router) + TypeScript + Tailwind CSS
-- Supabase (Auth, PostgreSQL, Storage)
-- Lucide Icons
-- Vercel Cron para decay de puntos
+- Open registration with real names and gender-split leaderboards
+- Stripe subscriptions ($10/mo or $60/yr) — pay before logging your first match
+- Match confirmation (24h auto-approve) with admin dispute resolution
+- Weekly rival opt-in with win bonus
+- Availability matching to find partners
+- Quarterly “points gained” leaderboard view
 
 ## Setup
 
-### 1. Supabase
-
-1. Creá un proyecto en [supabase.com](https://supabase.com)
-2. En **SQL Editor**, ejecutá el contenido de [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql)
-3. En **Authentication → Providers**, habilitá Email (desactivá "Confirm email" para desarrollo rápido)
-4. Copiá URL y keys desde **Project Settings → API**
-
-### 2. Variables de entorno
-
-```bash
-cp .env.example .env.local
-```
-
-Completá:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-CRON_SECRET=
-```
-
-### 3. Instalar y correr
+1. Create a **new** Supabase project (do not reuse Wild On credentials).
+2. Run migrations in `supabase/migrations/` in order.
+3. Copy `.env.example` to `.env.local` and fill in values.
+4. Create Stripe products/prices and set webhook to `/api/stripe/webhook`.
+5. Configure Resend for transactional email.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abrí [http://localhost:3000](http://localhost:3000)
+## Scripts
 
-### 4. Tests
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Local development |
+| `npm run build` | Production build |
+| `npm run comp-seed` | Mark beta users as comped (edit emails in script) |
+| `npm run recalculate-ratings` | Replay all matches from base ratings |
+| `npm run confirm-pending-matches` | Bulk-confirm pending matches |
 
-```bash
-npm test
-```
+## Deploy
 
-### 5. Deploy (Vercel)
+- **GitHub:** `matitelmo/fence` (separate repo from Wild On)
+- **Vercel:** New project linked to `fence` repo
+- **Crons:** `confirm-matches` (hourly), `decay` (daily), `match-reminders` (hourly)
 
-1. Conectá el repo a Vercel
-2. Agregá las variables de entorno
-3. El cron de inactividad corre diariamente a las 06:00 UTC (`vercel.json`)
+## Environment
 
-Para probar el cron manualmente:
-
-```bash
-curl -H "Authorization: Bearer TU_CRON_SECRET" https://tu-app.vercel.app/api/cron/decay
-```
-
-## Pantallas
-
-| Ruta | Descripción |
-|------|-------------|
-| `/ranking` | Tabla de posiciones con racha, fantasma 👻, filtro Histórico / Jugador del Mes |
-| `/partido` | Wizard 3 pasos para cargar partido |
-| `/historial` | Historial de partidos del usuario |
-| `/reglas` | Reglas y scoring explicado para jugadores |
-| `/perfil` | Perfil propio + medallas |
-| `/perfil/[id]` | Perfil ajeno + Head-to-Head |
-
-## Motor Elo
-
-`K=32`, multiplicadores por formato (1.5×–0.8×) y bonus por sets corridos (1.2×). Dobles usa promedio de Elo del equipo.
-
-## Decay por inactividad
-
-Después de 14 días sin partidos: −25 pts por cada semana extra, con piso global de 600 pts (podés caer por debajo de tu `base_rating`).
+See [`.env.example`](.env.example) for all required variables.

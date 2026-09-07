@@ -130,10 +130,12 @@ export function PointsReveal({
           onClick={(e) => e.stopPropagation()}
         >
           <h2 className="mb-2 text-center text-2xl font-black text-accent">
-            ¡Partido cargado!
+            {pending ? "Resultado enviado" : "¡Partido confirmado!"}
           </h2>
           <p className="mb-4 text-center text-body">
-            Los puntos ya están en el ranking.
+            {pending
+              ? "Esperando confirmación del rival. Si no responde en 24h, se confirma solo."
+              : "Los puntos ya están en el ranking."}
           </p>
           {summary?.tags.includes("Partido de la Semana") && (
             <p className="mb-3 text-center text-xs font-bold text-accent">

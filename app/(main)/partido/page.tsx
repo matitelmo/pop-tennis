@@ -1,13 +1,19 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUserProfile } from "@/lib/actions/auth";
 import { getPendingMatchesForUser, getAllProfiles } from "@/lib/actions/match";
 import { MatchWizard } from "@/components/MatchWizard";
 import { PendingMatchesBanner } from "@/components/PendingMatchesBanner";
 import { AppHeader } from "@/components/AppHeader";
+import { hasActiveSubscription } from "@/lib/subscription";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 export default async function PartidoPage() {
   const profile = await getCurrentUserProfile();
   if (!profile) redirect("/login");
+
+  const canLog = hasActiveSubscription(profile);
 
   const [pending, profiles] = await Promise.all([
     getPendingMatchesForUser(profile.id),
@@ -22,8 +28,19 @@ export default async function PartidoPage() {
     <div>
       <AppHeader
         title="Cargar Partido"
-        subtitle="Registrá el resultado y mirá el impacto en pts"
+        subtitle="Bo3 o Bo5 · confirmación del rival"
       />
+
+      {!canLog && (
+        <Card className="mb-6 border-accent/30 p-4">
+          <p className="text-sm text-zinc-300">
+            Necesitás suscripción activa para registrar partidos oficiales.
+          </p>
+          <Link href="/subscribe" className="mt-3 block">
+            <Button className="w-full">Ver planes</Button>
+          </Link>
+        </Card>
+      )}
 
       {actionable.length > 0 && (
         <div className="mb-6">
@@ -35,7 +52,7 @@ export default async function PartidoPage() {
         </div>
       )}
 
-      <MatchWizard currentUserId={profile.id} />
+      {canLog && <MatchWizard currentUserId={profile.id} />}
     </div>
   );
 }

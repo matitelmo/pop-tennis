@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   acceptCounterMatch,
   confirmMatch,
+  disputeMatch,
   proposeCounterMatch,
   type PendingMatch,
   type MatchRevealData,
@@ -86,6 +87,15 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
     else onDone();
   }
 
+  async function handleDisputeToAdmin() {
+    setLoading(true);
+    setError(null);
+    const res = await disputeMatch(match.id);
+    setLoading(false);
+    if (!res.success) setError(res.error ?? "Error");
+    else onDone();
+  }
+
   async function handleProposeCounter() {
     if (counterValidationError) {
       setError(counterValidationError);
@@ -146,24 +156,35 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
         {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
         {match.role === "needs_confirm" && !disputing && (
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 space-y-2">
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                onClick={handleConfirm}
+                disabled={loading}
+                className="flex-1"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Confirmar
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setDisputing(true)}
+                disabled={loading}
+                className="flex-1"
+              >
+                <X className="h-4 w-4" /> Otro resultado
+              </Button>
+            </div>
             <Button
               type="button"
-              onClick={handleConfirm}
+              variant="ghost"
+              onClick={handleDisputeToAdmin}
               disabled={loading}
-              className="flex-1"
+              className="w-full text-danger"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              Confirmar
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setDisputing(true)}
-              disabled={loading}
-              className="flex-1"
-            >
-              <X className="h-4 w-4" /> Otro resultado
+              Enviar disputa al admin
             </Button>
           </div>
         )}

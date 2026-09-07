@@ -2,18 +2,22 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  applyRatingChanges,
   applyConfirmedMatch,
   computeMatchOutcome,
   fetchRatingsForIds,
   getConfirmationDeadline,
   getOpponentTeamIds,
-  rollbackRatingChanges,
   type MatchInput,
 } from "@/lib/match/apply-match";
 import { isWeeklyMatchOpponent } from "@/lib/actions/weekly-match";
+import { getCurrentUserProfile, getUserEmail } from "@/lib/actions/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { hasActiveSubscription } from "@/lib/subscription";
+import {
+  sendDisputeToAdmin,
+  sendMatchConfirmRequest,
+} from "@/lib/email/send";
 import type { MatchFormat, SetScore } from "@/types/database";
 import type { MatchPointSummary } from "@/lib/match-labels";
 import { formatSetScoresWithTeams, formatTeamName } from "@/lib/match/score-display";
@@ -62,6 +66,9 @@ export type MatchRevealData = {
   winningTeam?: 1 | 2;
 };
 
+const OPPONENT_LIMIT = 2;
+const OPPONENT_WINDOW_DAYS = 30;
+
 async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null> {
   const admin = createServiceClient();
   const { data: match } = await admin.from("matches").select("*").eq("id", matchId).single();
@@ -73,9 +80,7 @@ async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null
   const team2Ids = match.team2_ids as string[];
   const setScores = match.set_scores as SetScore[];
   const winningTeam = match.winning_team as 1 | 2;
-  const allIds = Array.from(
-    new Set([...winnerIds, ...loserIds, ...team1Ids, ...team2Ids])
-  );
+  const allIds = Array.from(new Set([...winnerIds, ...loserIds, ...team1Ids, ...team2Ids]));
   const { data: profiles } = await admin.from("profiles").select("id, full_name").in("id", allIds);
   const names = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.full_name]));
   const team1Name = formatTeamName(team1Ids, names);
@@ -93,6 +98,68 @@ async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null
     team2Ids,
     winningTeam,
   };
+}
+
+async function countRecentOpponentMatches(
+  userId: string,
+  opponentIds: string[]
+): Promise<number> {
+  if (!opponentIds.length) return 0;
+  const admin = createServiceClient();
+  const since = new Date();
+  since.setDate(since.getDate() - OPPONENT_WINDOW_DAYS);
+
+  const { data: matches } = await admin
+    .from("matches")
+    .select("team1_ids, team2_ids, status")
+    .in("status", ["pending", "counter_proposed", "confirmed"])
+    .gte("created_at", since.toISOString());
+
+  let count = 0;
+  for (const m of matches ?? []) {
+    const team1 = m.team1_ids as string[];
+    const team2 = m.team2_ids as string[];
+    const all = [...team1, ...team2];
+    if (!all.includes(userId)) continue;
+    const opponents = getOpponentTeamIds(userId, team1, team2);
+    if (opponentIds.some((oid) => opponents.includes(oid))) count++;
+  }
+  return count;
+}
+
+async function notifyOpponentsToConfirm(params: {
+  matchId: string;
+  submitterId: string;
+  team1Ids: string[];
+  team2Ids: string[];
+  setScores: SetScore[];
+  submitterName: string;
+}) {
+  const opponents = getOpponentTeamIds(
+    params.submitterId,
+    params.team1Ids,
+    params.team2Ids
+  );
+  const admin = createServiceClient();
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", [...params.team1Ids, ...params.team2Ids]);
+  const names = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.full_name]));
+  const team1Name = formatTeamName(params.team1Ids, names);
+  const team2Name = formatTeamName(params.team2Ids, names);
+  const scoreSummary = formatSetScoresWithTeams(params.setScores, team1Name, team2Name);
+
+  for (const opponentId of opponents) {
+    const email = await getUserEmail(opponentId);
+    if (!email) continue;
+    await sendMatchConfirmRequest({
+      toEmail: email,
+      toName: names[opponentId] ?? "Jugador",
+      submitterName: params.submitterName,
+      scoreSummary,
+    });
+  }
 }
 
 export async function previewMatchDelta(
@@ -136,6 +203,18 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
 
   if (!user) return { success: false, error: "No autenticado" };
 
+  const profile = await getCurrentUserProfile();
+  if (!profile || !hasActiveSubscription(profile)) {
+    return {
+      success: false,
+      error: "Necesitás una suscripción activa para cargar partidos",
+    };
+  }
+
+  if (input.format.endsWith("bo1")) {
+    return { success: false, error: "Solo se permiten partidos al mejor de 3 o 5 sets" };
+  }
+
   const allIds = [...input.team1Ids, ...input.team2Ids];
   const ratingsMap = await fetchRatingsForIds(allIds);
 
@@ -143,6 +222,17 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
   const opponentIds = isParticipant
     ? getOpponentTeamIds(user.id, input.team1Ids, input.team2Ids)
     : [];
+
+  if (isParticipant && opponentIds.length) {
+    const recentCount = await countRecentOpponentMatches(user.id, opponentIds);
+    if (recentCount >= OPPONENT_LIMIT) {
+      return {
+        success: false,
+        error: `Ya jugaste ${OPPONENT_LIMIT} partidos contra este rival en los últimos 30 días`,
+      };
+    }
+  }
+
   const isWeeklyMatch =
     isParticipant &&
     input.format.startsWith("1v1_") &&
@@ -181,14 +271,15 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
     return { success: false, error: matchError?.message ?? "Error al guardar partido" };
   }
 
-  await applyRatingChanges(outcome.ratingChanges, { updateLastMatchAt: true });
-
-  const confirmResult = await applyConfirmedMatch(match.id, user.id);
-  if (!confirmResult.success) {
-    await rollbackRatingChanges(outcome.ratingChanges);
-    await admin.from("matches").delete().eq("id", match.id);
-    return { success: false, error: confirmResult.error ?? "Error al registrar partido" };
-  }
+  const submitterProfile = profile.full_name;
+  await notifyOpponentsToConfirm({
+    matchId: match.id,
+    submitterId: user.id,
+    team1Ids: input.team1Ids,
+    team2Ids: input.team2Ids,
+    setScores: input.setScores,
+    submitterName: submitterProfile,
+  });
 
   revalidatePath("/ranking");
   revalidatePath("/historial");
@@ -199,7 +290,7 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
     success: true,
     deltas: outcome.ratingChanges,
     matchId: match.id,
-    pendingConfirmation: false,
+    pendingConfirmation: true,
     multipliers: outcome.multipliers,
     summary: outcome.summary,
   };
@@ -230,10 +321,7 @@ export async function confirmMatch(
     return { success: false, error: "Solo un rival puede confirmar este resultado" };
   }
 
-  await admin
-    .from("matches")
-    .update({ confirmed_by: user.id })
-    .eq("id", matchId);
+  await admin.from("matches").update({ confirmed_by: user.id }).eq("id", matchId);
 
   const result = await applyConfirmedMatch(matchId, user.id);
 
@@ -247,6 +335,57 @@ export async function confirmMatch(
   }
 
   return result;
+}
+
+export async function disputeMatch(
+  matchId: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const admin = createServiceClient();
+  const { data: match } = await admin.from("matches").select("*").eq("id", matchId).single();
+
+  if (!match || match.status !== "pending") {
+    return { success: false, error: "Partido no disponible para disputa" };
+  }
+
+  const team1Ids = match.team1_ids as string[];
+  const team2Ids = match.team2_ids as string[];
+  const opponents = getOpponentTeamIds(match.submitted_by, team1Ids, team2Ids);
+
+  if (!opponents.includes(user.id)) {
+    return { success: false, error: "Solo un rival puede disputar este resultado" };
+  }
+
+  await admin
+    .from("matches")
+    .update({ status: "disputed", counter_submitted_by: user.id })
+    .eq("id", matchId);
+
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", [match.submitted_by, user.id]);
+  const nameMap = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.full_name]));
+
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    await sendDisputeToAdmin({
+      adminEmail,
+      matchId,
+      submitterName: nameMap[match.submitted_by] ?? "?",
+      disputerName: nameMap[user.id] ?? "?",
+    });
+  }
+
+  revalidatePath("/ranking");
+  revalidatePath("/partido");
+  return { success: true };
 }
 
 export async function proposeCounterMatch(
@@ -275,11 +414,6 @@ export async function proposeCounterMatch(
     return { success: false, error: "Solo un rival puede proponer otro resultado" };
   }
 
-  const appliedChanges = (match.rating_changes ?? {}) as Record<string, number>;
-  if (Object.keys(appliedChanges).length) {
-    await rollbackRatingChanges(appliedChanges);
-  }
-
   const ratingsMap = await fetchRatingsForIds([...team1Ids, ...team2Ids]);
   const computed = await computeMatchOutcome(
     {
@@ -294,13 +428,8 @@ export async function proposeCounterMatch(
   );
 
   if (!computed.success) {
-    if (Object.keys(appliedChanges).length) {
-      await applyRatingChanges(appliedChanges);
-    }
     return { success: false, error: computed.error };
   }
-
-  await applyRatingChanges(computed.outcome.ratingChanges);
 
   await admin
     .from("matches")
@@ -357,6 +486,35 @@ export async function acceptCounterMatch(
   }
 
   return result;
+}
+
+export async function adminResolveMatch(
+  matchId: string,
+  action: "confirm" | "delete"
+): Promise<{ success: boolean; error?: string }> {
+  const profile = await getCurrentUserProfile();
+  if (!profile || profile.id !== process.env.ADMIN_USER_ID) {
+    return { success: false, error: "No autorizado" };
+  }
+
+  const admin = createServiceClient();
+  const { data: match } = await admin.from("matches").select("*").eq("id", matchId).single();
+
+  if (!match || match.status !== "disputed") {
+    return { success: false, error: "Partido no encontrado o no está en disputa" };
+  }
+
+  if (action === "delete") {
+    await admin.from("matches").delete().eq("id", matchId);
+  } else {
+    const result = await applyConfirmedMatch(matchId, profile.id);
+    if (!result.success) return result;
+  }
+
+  revalidatePath("/ranking");
+  revalidatePath("/admin/disputes");
+  revalidatePath("/partido");
+  return { success: true };
 }
 
 export async function getPendingMatchesForUser(userId: string): Promise<PendingMatch[]> {
@@ -425,5 +583,18 @@ export async function getPendingMatchesForUser(userId: string): Promise<PendingM
 export async function getAllProfiles() {
   const supabase = await createClient();
   const { data } = await supabase.from("profiles").select("*").order("full_name");
+  return data ?? [];
+}
+
+export async function getDisputedMatches() {
+  const profile = await getCurrentUserProfile();
+  if (!profile || profile.id !== process.env.ADMIN_USER_ID) return [];
+
+  const admin = createServiceClient();
+  const { data } = await admin
+    .from("matches")
+    .select("*")
+    .eq("status", "disputed")
+    .order("created_at", { ascending: false });
   return data ?? [];
 }

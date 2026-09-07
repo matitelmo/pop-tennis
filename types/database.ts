@@ -1,5 +1,16 @@
 export type SkillLevel = "beginner" | "intermediate" | "advanced" | "expert";
 
+export type Gender = "male" | "female";
+
+export type SubscriptionStatus =
+  | "none"
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "comped";
+
+export type Availability = Record<string, string[]>;
+
 export type MatchFormat =
   | "1v1_bo1"
   | "1v1_bo3"
@@ -15,6 +26,7 @@ export type Profile = {
   full_name: string;
   avatar_url: string | null;
   skill_level: SkillLevel;
+  gender: Gender | null;
   rating: number;
   base_rating: number;
   last_match_at: string;
@@ -23,6 +35,10 @@ export type Profile = {
   roster_player_id: string | null;
   last_seen_rank: number | null;
   last_seen_at: string | null;
+  subscription_status: SubscriptionStatus;
+  stripe_customer_id: string | null;
+  weekly_opt_in: boolean;
+  availability: Availability | null;
 };
 
 export type RosterPlayer = {
@@ -36,7 +52,7 @@ export type RosterPlayer = {
   created_at: string;
 };
 
-export type MatchStatus = "pending" | "counter_proposed" | "confirmed";
+export type MatchStatus = "pending" | "counter_proposed" | "disputed" | "confirmed";
 
 export type Match = {
   id: string;
@@ -94,3 +110,14 @@ export type RatingHistoryPoint = {
   date: string;
   rating: number;
 };
+
+export type Challenge = {
+  id: string;
+  from_user_id: string;
+  to_user_id: string;
+  created_at: string;
+};
+
+export type LeaderboardView = "alltime" | "quarterly";
+
+export type GenderFilter = "male" | "female";

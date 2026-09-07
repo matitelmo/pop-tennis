@@ -9,6 +9,7 @@ import {
   computeWeeklyPairings,
   getCooldownWeekStarts,
 } from "@/lib/weekly-match";
+import { hasActiveSubscription } from "@/lib/subscription";
 import type { Profile } from "@/types/database";
 
 export type WeeklyMatchAssignment = {
@@ -17,6 +18,7 @@ export type WeeklyMatchAssignment = {
   opponentRank: number;
   rankDiff: number;
   playedThisWeek: boolean;
+  optedIn: boolean;
 };
 
 function weekStartToDate(weekStart: Date): string {
@@ -42,6 +44,28 @@ async function loadCooldownPairs(weekStartDate: string): Promise<Set<string>> {
   return cooldownPairs;
 }
 
+export async function setWeeklyOptIn(optIn: boolean): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "No autenticado" };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("subscription_status")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || !hasActiveSubscription(profile)) {
+    return { success: false, error: "Necesitás suscripción activa para el rival semanal" };
+  }
+
+  const admin = createServiceClient();
+  await admin.from("profiles").update({ weekly_opt_in: optIn }).eq("id", user.id);
+  return { success: true };
+}
+
 export async function ensureWeeklyPairings(weekStart = getWeekStart()): Promise<void> {
   const admin = createServiceClient();
   const weekStartDate = weekStartToDate(weekStart);
@@ -53,7 +77,12 @@ export async function ensureWeeklyPairings(weekStart = getWeekStart()): Promise<
 
   if (count && count > 0) return;
 
-  const { data: profiles } = await admin.from("profiles").select("id, rating");
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("id, rating, weekly_opt_in, subscription_status")
+    .eq("weekly_opt_in", true)
+    .in("subscription_status", ["active", "comped"]);
+
   if (!profiles?.length) return;
 
   const ranked = buildRankedPlayers(profiles);
@@ -81,6 +110,16 @@ export async function getWeeklyMatchForUser(
   const weekStart = getWeekStart();
   const weekStartDate = weekStartToDate(weekStart);
 
+  const { data: userProfile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (!userProfile?.weekly_opt_in) {
+    return null;
+  }
+
   await ensureWeeklyPairings(weekStart);
 
   const { data: pairing } = await supabase
@@ -94,7 +133,12 @@ export async function getWeeklyMatchForUser(
 
   const [{ data: opponent }, { data: profiles }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", pairing.opponent_id).single(),
-    supabase.from("profiles").select("id, rating").order("rating", { ascending: false }),
+    supabase
+      .from("profiles")
+      .select("id, rating")
+      .eq("weekly_opt_in", true)
+      .in("subscription_status", ["active", "comped"])
+      .order("rating", { ascending: false }),
   ]);
 
   if (!opponent || !profiles?.length) return null;
@@ -127,6 +171,7 @@ export async function getWeeklyMatchForUser(
     opponentRank: opponentRanked.rank,
     rankDiff: Math.abs(userRanked.rank - opponentRanked.rank),
     playedThisWeek,
+    optedIn: true,
   };
 }
 

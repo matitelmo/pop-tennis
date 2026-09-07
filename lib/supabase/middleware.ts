@@ -30,13 +30,21 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+  const isPublic =
+    path.startsWith("/join") ||
+    path.startsWith("/login") ||
+    path.startsWith("/register") ||
+    path.startsWith("/ranking") ||
+    path.startsWith("/api/stripe/webhook") ||
+    path.startsWith("/api/cron");
   const isAuthRoute = path.startsWith("/login") || path.startsWith("/register");
   const isProtected =
-    path.startsWith("/ranking") ||
     path.startsWith("/partido") ||
     path.startsWith("/historial") ||
     path.startsWith("/reglas") ||
-    path.startsWith("/perfil");
+    path.startsWith("/perfil") ||
+    path.startsWith("/subscribe") ||
+    path.startsWith("/admin");
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
@@ -52,7 +60,13 @@ export async function updateSession(request: NextRequest) {
 
   if (path === "/") {
     const url = request.nextUrl.clone();
-    url.pathname = user ? "/ranking" : "/login";
+    url.pathname = user ? "/ranking" : "/join";
+    return NextResponse.redirect(url);
+  }
+
+  if (!user && !isPublic && path !== "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 

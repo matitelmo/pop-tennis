@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { ChallengeButton } from "@/components/ChallengeButton";
 
 type Player = { id: string; full_name: string };
 
@@ -10,6 +11,7 @@ type Props = {
   excludeId?: string;
   title?: string;
   limit?: number;
+  canChallenge?: boolean;
 };
 
 export function PlayerSearchList({
@@ -17,6 +19,7 @@ export function PlayerSearchList({
   excludeId,
   title = "Buscar jugador",
   limit,
+  canChallenge = false,
 }: Props) {
   const [query, setQuery] = useState("");
 
@@ -42,13 +45,17 @@ export function PlayerSearchList({
       />
       <div className="flex flex-wrap gap-2">
         {filtered.map((p) => (
-          <Link
-            key={p.id}
-            href={`/perfil/${p.id}`}
-            className="min-h-[44px] rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-zinc-200 transition active:scale-95 hover:bg-white/20"
-          >
-            {p.full_name}
-          </Link>
+          <div key={p.id} className="flex flex-col gap-1">
+            <Link
+              href={`/perfil/${p.id}`}
+              className="min-h-[44px] rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-zinc-200 transition active:scale-95 hover:bg-white/20"
+            >
+              {p.full_name}
+            </Link>
+            {canChallenge && (
+              <ChallengeButton opponentId={p.id} opponentName={p.full_name} size="sm" />
+            )}
+          </div>
         ))}
         {!filtered.length && (
           <p className="text-sm text-zinc-500">No se encontraron jugadores</p>

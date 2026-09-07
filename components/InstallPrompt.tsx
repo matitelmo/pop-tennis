@@ -61,7 +61,7 @@ export function InstallPrompt() {
     <Card className="mb-4 border-accent/20 bg-accent-muted">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
-          <p className="font-bold text-white">Instalá Wild On Pop Tennis</p>
+          <p className="font-bold text-white">Instalá Fence</p>
           <p className="mt-1 text-caption">
             {isIOS
               ? "Safari → Compartir → Agregar a inicio de pantalla"

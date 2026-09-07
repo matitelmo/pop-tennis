@@ -87,7 +87,7 @@ export function PlayerProfileView({
 
       {!player.isUnclaimed && !isOwnProfile && (
         <>
-          <ChallengeButton opponentName={player.full_name} />
+          <ChallengeButton opponentId={player.id} opponentName={player.full_name} />
           <HeadToHeadSection
             userId={currentUserId}
             opponentId={player.id}

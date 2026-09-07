@@ -42,7 +42,7 @@ type RevealState = {
 export function MatchWizard({ currentUserId }: Props) {
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<"1v1" | "2v2">("1v1");
-  const [bestOf, setBestOf] = useState<1 | 3 | 5>(3);
+  const [bestOf, setBestOf] = useState<3 | 5>(3);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [team1Ids, setTeam1Ids] = useState<string[]>([]);
   const [team2Ids, setTeam2Ids] = useState<string[]>([]);
@@ -193,7 +193,7 @@ export function MatchWizard({ currentUserId }: Props) {
       team1Ids,
       team2Ids,
       winningTeam,
-      pending: false,
+      pending: result.pendingConfirmation ?? false,
       summary: result.summary,
     });
   };
@@ -225,8 +225,8 @@ export function MatchWizard({ currentUserId }: Props) {
           </div>
           <div>
             <p className="mb-3 text-sm font-medium text-zinc-400">Formato</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([1, 3, 5] as const).map((bo) => (
+            <div className="grid grid-cols-2 gap-2">
+              {([3, 5] as const).map((bo) => (
                 <button
                   key={bo}
                   type="button"
@@ -237,7 +237,7 @@ export function MatchWizard({ currentUserId }: Props) {
                       : "border-border bg-surface-glass text-zinc-300"
                   }`}
                 >
-                  {bo === 1 ? "1 set" : `Bo${bo}`}
+                  Bo{bo}
                 </button>
               ))}
             </div>

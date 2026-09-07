@@ -18,7 +18,7 @@ export function buildMatchShareText(params: ShareMatchParams): string {
         .join(", ")
     : "";
 
-  return `🎾 Pop Tennis — ${winners} le ganó a ${losers} ${params.scoreStr}${deltaStr ? ` (${deltaStr})` : ""}. Ranking: ${url}/ranking`;
+  return `🎾 Fence — ${winners} le ganó a ${losers} ${params.scoreStr}${deltaStr ? ` (${deltaStr})` : ""}${params.pending ? " (pendiente confirmación)" : ""}. Ranking: ${url}/ranking`;
 }
 
 export function shareViaWhatsApp(text: string) {

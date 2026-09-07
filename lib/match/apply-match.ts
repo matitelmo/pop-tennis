@@ -218,15 +218,18 @@ export async function applyConfirmedMatch(
 
   if (!existingParticipants?.length) {
     const ratingsMap = await fetchRatingsForIds(allIds);
+
+    await applyRatingChanges(ratingChanges, { updateLastMatchAt: true });
+
     const participantRows = allIds.map((id) => {
-      const after = ratingsMap[id];
+      const before = ratingsMap[id];
       const delta = ratingChanges[id] ?? 0;
       return {
         match_id: matchId,
         user_id: id,
         team: winnerIds.includes(id) ? ("winner" as const) : ("loser" as const),
-        rating_before: after - delta,
-        rating_after: after,
+        rating_before: before,
+        rating_after: before + delta,
         rating_delta: delta,
       };
     });

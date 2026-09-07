@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { shareViaWhatsApp } from "@/lib/share";
+import { useState } from "react";
+import { sendChallenge } from "@/lib/actions/challenge";
 
 type Props = {
   id: string;
@@ -9,6 +10,7 @@ type Props = {
   variant?: "default" | "nudge" | "rival";
   daysInactive?: number;
   showChallenge?: boolean;
+  canChallenge?: boolean;
 };
 
 export function PlayNudgeChip({
@@ -17,7 +19,10 @@ export function PlayNudgeChip({
   variant = "default",
   daysInactive,
   showChallenge = false,
+  canChallenge = false,
 }: Props) {
+  const [sent, setSent] = useState(false);
+
   const styles =
     variant === "nudge"
       ? "bg-orange-500/20 text-orange-400"
@@ -30,12 +35,13 @@ export function PlayNudgeChip({
       ? `${daysInactive}d sin jugar`
       : name;
 
-  function handleChallenge(e: React.MouseEvent) {
+  async function handleChallenge(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    shareViaWhatsApp(
-      `🎾 ¿Jugamos Pop Tennis esta semana, ${name}? ${window.location.origin}/ranking`
-    );
+    if (canChallenge) {
+      const res = await sendChallenge(id);
+      if (res.success) setSent(true);
+    }
   }
 
   return (
@@ -46,13 +52,14 @@ export function PlayNudgeChip({
       >
         {label}
       </Link>
-      {showChallenge && (
+      {showChallenge && canChallenge && (
         <button
           type="button"
           onClick={handleChallenge}
-          className="min-h-[36px] rounded-full bg-lime-500 px-2.5 text-[10px] font-bold text-black active:scale-95"
+          disabled={sent}
+          className="min-h-[36px] rounded-full bg-lime-500 px-2.5 text-[10px] font-bold text-black active:scale-95 disabled:opacity-60"
         >
-          Desafiar
+          {sent ? "Enviado" : "Desafiar"}
         </button>
       )}
     </div>

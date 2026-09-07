@@ -1,5 +1,5 @@
 {
-  "name": "pop-tennis",
+  "name": "fence",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "recalculate-ratings": "tsx scripts/recalculate-match-ratings.ts",
-    "confirm-pending-matches": "tsx scripts/confirm-pending-matches.ts"
+    "confirm-pending-matches": "tsx scripts/confirm-pending-matches.ts",
+    "comp-seed": "tsx scripts/comp-seed.ts"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -20,6 +21,8 @@
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18",
+    "resend": "^4.0.0",
+    "stripe": "^17.0.0",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {

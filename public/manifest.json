@@ -1,8 +1,8 @@
 {
-  "name": "Wild On Pop Tennis",
-  "short_name": "Wild On",
-  "description": "Ranking y gamificación para la banda de Pop Tennis",
-  "start_url": "/ranking",
+  "name": "Fence — Venice Pop Tennis",
+  "short_name": "Fence",
+  "description": "Venice Pop Tennis League — ranking oficial",
+  "start_url": "/join",
   "display": "standalone",
   "background_color": "#0a0e14",
   "theme_color": "#0a0e14",

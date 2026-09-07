@@ -42,6 +42,7 @@ export function WeeklyMatchCard({ assignment }: Props) {
           name={opponent.full_name}
           variant="rival"
           showChallenge
+          canChallenge
         />
         <p className="mt-2 text-xs text-zinc-500">
           {opponent.full_name} · #{opponentRank} · {opponent.rating} pts · vos #{userRank} (Δ

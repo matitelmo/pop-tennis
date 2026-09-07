@@ -15,9 +15,11 @@ import { Button } from "@/components/ui/Button";
 import { getLeaderboard } from "@/lib/actions/ranking";
 import { getAllProfiles } from "@/lib/actions/match";
 import { getSkillLabel } from "@/lib/constants";
+import { hasActiveSubscription, subscriptionLabel as subLabel } from "@/lib/subscription";
 import { getAvatarColor, getInitials } from "@/lib/utils";
 import { ProfileStatsSection } from "@/components/ProfileStatsSection";
 import { PlayerSearchList } from "@/components/PlayerSearchList";
+import { AvailabilitySection } from "@/components/AvailabilitySection";
 import { LogOut } from "lucide-react";
 
 export default async function PerfilPage() {
@@ -33,12 +35,13 @@ export default async function PerfilPage() {
   const allProfiles = await getAllProfiles();
   const myEntry = entries.find((e) => e.id === profile.id);
   const rank = entries.findIndex((e) => e.id === profile.id) + 1;
+  const canUsePaidFeatures = hasActiveSubscription(profile);
 
   return (
     <div className="space-y-6">
       <AppHeader
         title="Mi Perfil"
-        subtitle="Vitrina de trofeos"
+        subtitle="Venice Pop Tennis League"
         action={
           <form action={logout}>
             <Button type="submit" variant="ghost" size="sm" className="min-w-[44px] px-2">
@@ -61,14 +64,27 @@ export default async function PerfilPage() {
           </div>
         )}
         <p className="text-body">{getSkillLabel(profile.skill_level)}</p>
+        <p className="text-caption capitalize">
+          {profile.gender === "male" ? "Hombres" : profile.gender === "female" ? "Mujeres" : ""}
+        </p>
         <ProfileRating rating={profile.rating} />
+        <p className="mt-1 text-caption">{subLabel(profile.subscription_status)}</p>
         {rank > 0 && <p className="mt-1 text-caption">Puesto #{rank}</p>}
         {myEntry && (
           <div className="mt-4 flex justify-center">
             <StreakIcons streak={myEntry.streak} />
           </div>
         )}
+        {!canUsePaidFeatures && (
+          <Link href="/subscribe" className="mt-4 block">
+            <Button size="sm" className="w-full">
+              Activar suscripción
+            </Button>
+          </Link>
+        )}
       </Card>
+
+      <AvailabilitySection initial={profile.availability} canEdit={canUsePaidFeatures} />
 
       <RatingChart points={ratingHistory} />
 
@@ -89,6 +105,7 @@ export default async function PerfilPage() {
         players={allProfiles.map((p) => ({ id: p.id, full_name: p.full_name }))}
         excludeId={profile.id}
         title="Ver perfil de..."
+        canChallenge={canUsePaidFeatures}
       />
 
       <Link href="/reglas" className="block text-center text-caption underline">

@@ -11,6 +11,7 @@ type Props = {
   entry: LeaderboardEntry;
   rank: number;
   showMonthlyDelta?: boolean;
+  showQuarterlyDelta?: boolean;
   showActivity?: boolean;
   isCurrentUser?: boolean;
 };
@@ -26,6 +27,7 @@ export function LeaderboardRow({
   entry,
   rank,
   showMonthlyDelta,
+  showQuarterlyDelta,
   showActivity,
   isCurrentUser,
 }: Props) {
@@ -59,6 +61,7 @@ export function LeaderboardRow({
               {entry.full_name}
             </p>
             {isCurrentUser && <Badge variant="accent">Vos</Badge>}
+            {entry.isFrozen && <Badge variant="default">Congelado</Badge>}
             {entry.isGhost && <GhostBadge compact />}
           </div>
           <div className="mt-1">
@@ -66,7 +69,17 @@ export function LeaderboardRow({
           </div>
         </div>
         <div className="shrink-0 text-right">
-          {showMonthlyDelta ? (
+          {showQuarterlyDelta ? (
+            <p
+              className={cn(
+                "text-lg font-bold",
+                entry.quarterlyDelta >= 0 ? "text-success" : "text-danger"
+              )}
+            >
+              {entry.quarterlyDelta >= 0 ? "+" : ""}
+              {entry.quarterlyDelta}
+            </p>
+          ) : showMonthlyDelta ? (
             <p
               className={cn(
                 "text-lg font-bold",
@@ -82,7 +95,13 @@ export function LeaderboardRow({
             <p className="text-lg font-bold text-accent">{entry.rating}</p>
           )}
           <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            {showMonthlyDelta ? "mes" : showActivity ? "partidos" : "pts"}
+            {showQuarterlyDelta
+              ? "trimestre"
+              : showMonthlyDelta
+                ? "mes"
+                : showActivity
+                  ? "partidos"
+                  : "pts"}
           </p>
         </div>
       </Link>
@@ -95,6 +114,7 @@ export function LeaderboardRow({
             variant="nudge"
             daysInactive={entry.playNudge.days}
             showChallenge
+            canChallenge={!entry.isFrozen}
           />
         </div>
       )}

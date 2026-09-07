@@ -9,13 +9,13 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Wild On Pop Tennis",
-  description: "Ranking y gamificación para la banda de Pop Tennis",
+  title: "Fence — Venice Pop Tennis League",
+  description: "Ranking oficial, partidos confirmados y liga en Venice Beach",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Wild On Pop Tennis",
+    title: "Fence",
   },
 };
 
