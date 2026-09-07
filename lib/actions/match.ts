@@ -13,6 +13,8 @@ import { isWeeklyMatchOpponent } from "@/lib/actions/weekly-match";
 import { getCurrentUserProfile, getUserEmail } from "@/lib/actions/auth";
 import { assertAdmin } from "@/lib/admin/auth";
 import { getCommunityBySlug, getCommunityMember } from "@/lib/community/context";
+import { parseCommunitySettings } from "@/lib/community/settings";
+import { rosterToPickableProfile } from "@/lib/community/roster-as-players";
 import { revalidateCommunityPaths } from "@/lib/community/paths";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
@@ -601,17 +603,38 @@ export async function getPendingMatchesForUser(
 
 export async function getCommunityProfiles(
   communityId: string
-): Promise<(Profile & { member: CommunityMember })[]> {
+): Promise<(Profile & { member?: CommunityMember; isRosterOnly?: boolean })[]> {
   const admin = createServiceClient();
+  const { data: communityRow } = await admin
+    .from("communities")
+    .select("settings")
+    .eq("id", communityId)
+    .maybeSingle();
+
+  const settings = parseCommunitySettings(communityRow?.settings);
+
   const { data } = await admin
     .from("community_members")
     .select("*, profile:profiles(*)")
     .eq("community_id", communityId);
 
-  return (data ?? []).map((row) => {
+  const memberProfiles = (data ?? []).map((row) => {
     const { profile, ...member } = row as CommunityMember & { profile: Profile };
     return { ...profile, member };
   });
+
+  if (settings.signup_mode !== "roster") {
+    return memberProfiles;
+  }
+
+  const { data: rosterRows } = await admin
+    .from("roster_players")
+    .select("*")
+    .eq("community_id", communityId)
+    .is("claimed_by", null);
+
+  const rosterProfiles = (rosterRows ?? []).map(rosterToPickableProfile);
+  return [...memberProfiles, ...rosterProfiles];
 }
 
 export async function getCommunityProfilesBySlug(slug: string) {

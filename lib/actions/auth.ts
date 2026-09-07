@@ -97,7 +97,8 @@ async function registerRoster(
   if (!authData.user) return { error: "No se pudo crear la cuenta" };
 
   const admin = createServiceClient();
-  const rating = getInitialRating(skillLevel);
+  let resolvedSkillLevel = skillLevel;
+  let rating = getInitialRating(skillLevel);
   let displayName: string;
   let linkedRosterId: string;
 
@@ -116,6 +117,8 @@ async function registerRoster(
 
     displayName = slot.display_name;
     linkedRosterId = slot.id;
+    rating = slot.suggested_rating;
+    resolvedSkillLevel = slot.suggested_skill_level as SkillLevel;
 
     const { error: claimError } = await admin
       .from("roster_players")
@@ -147,7 +150,7 @@ async function registerRoster(
       .insert({
         community_id: communityId,
         display_name: displayName,
-        suggested_skill_level: skillLevel,
+        suggested_skill_level: resolvedSkillLevel,
         suggested_rating: rating,
         is_preset: false,
         claimed_by: authData.user.id,
@@ -167,7 +170,7 @@ async function registerRoster(
   const { error: profileError } = await admin.from("profiles").insert({
     id: authData.user.id,
     full_name: displayName,
-    skill_level: skillLevel,
+    skill_level: resolvedSkillLevel,
     rating,
     base_rating: rating,
     last_match_at: new Date().toISOString(),

@@ -1,9 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { syncCommunityRatings } from "@/lib/match/sync-ratings";
 import { getCommunityBySlug } from "@/lib/community/context";
-import type { GenderFilter, LeaderboardView, Profile, SubscriptionStatus } from "@/types/database";
+import type { GenderFilter, LeaderboardView, Profile, SubscriptionStatus, SkillLevel } from "@/types/database";
 import { getPlayNudgeDays } from "@/lib/rival";
 
 export type LeaderboardEntry = Profile & {
@@ -137,6 +138,7 @@ export async function getLeaderboard(
   }
 
   const activePlayerIds = new Set((activeRows ?? []).map((row) => row.user_id));
+  const isRosterCommunity = community.settings.signup_mode === "roster";
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -146,6 +148,7 @@ export async function getLeaderboard(
     (members ?? [])
       .filter((row) => {
         const profile = row.profile as unknown as Profile;
+        if (isRosterCommunity) return true;
         return activePlayerIds.has(profile.id);
       })
       .filter((row) => {
@@ -169,6 +172,44 @@ export async function getLeaderboard(
         );
       })
   );
+
+  if (isRosterCommunity) {
+    const admin = createServiceClient();
+    const { data: rosterRows } = await admin
+      .from("roster_players")
+      .select("*")
+      .eq("community_id", community.id)
+      .is("claimed_by", null);
+
+    for (const roster of rosterRows ?? []) {
+      profileEntries.push({
+        id: roster.id,
+        full_name: roster.display_name,
+        avatar_url: null,
+        skill_level: roster.suggested_skill_level as SkillLevel,
+        gender: null,
+        rating: roster.suggested_rating,
+        base_rating: roster.suggested_rating,
+        last_match_at: now.toISOString(),
+        last_decay_at: null,
+        created_at: roster.created_at,
+        roster_player_id: roster.id,
+        last_seen_rank: null,
+        last_seen_at: null,
+        subscription_status: "none",
+        stripe_customer_id: null,
+        weekly_opt_in: false,
+        availability: null,
+        streak: [],
+        monthlyDelta: 0,
+        monthlyMatches: 0,
+        quarterlyDelta: 0,
+        isGhost: false,
+        playNudge: { type: "none", days: 0 },
+        isFrozen: false,
+      });
+    }
+  }
 
   if (showQuarterly && view === "quarterly") {
     return profileEntries.sort((a, b) => b.quarterlyDelta - a.quarterlyDelta);

@@ -43,28 +43,43 @@ export async function applyRatingChanges(
   const admin = createServiceClient();
   const now = new Date().toISOString();
 
-  for (const [userId, delta] of Object.entries(changes)) {
+  for (const [playerId, delta] of Object.entries(changes)) {
     const { data: member } = await admin
       .from("community_members")
       .select("rating")
       .eq("community_id", communityId)
-      .eq("user_id", userId)
-      .single();
+      .eq("user_id", playerId)
+      .maybeSingle();
 
-    if (!member) continue;
+    if (member) {
+      const update: { rating: number; last_match_at?: string } = {
+        rating: member.rating + delta,
+      };
+      if (options?.updateLastMatchAt) {
+        update.last_match_at = now;
+      }
 
-    const update: { rating: number; last_match_at?: string } = {
-      rating: member.rating + delta,
-    };
-    if (options?.updateLastMatchAt) {
-      update.last_match_at = now;
+      await admin
+        .from("community_members")
+        .update(update)
+        .eq("community_id", communityId)
+        .eq("user_id", playerId);
+      continue;
     }
 
-    await admin
-      .from("community_members")
-      .update(update)
+    const { data: roster } = await admin
+      .from("roster_players")
+      .select("suggested_rating")
       .eq("community_id", communityId)
-      .eq("user_id", userId);
+      .eq("id", playerId)
+      .maybeSingle();
+
+    if (roster) {
+      await admin
+        .from("roster_players")
+        .update({ suggested_rating: roster.suggested_rating + delta })
+        .eq("id", playerId);
+    }
   }
 }
 
@@ -74,21 +89,36 @@ export async function rollbackRatingChanges(
 ): Promise<void> {
   const admin = createServiceClient();
 
-  for (const [userId, delta] of Object.entries(changes)) {
+  for (const [playerId, delta] of Object.entries(changes)) {
     const { data: member } = await admin
       .from("community_members")
       .select("rating")
       .eq("community_id", communityId)
-      .eq("user_id", userId)
-      .single();
+      .eq("user_id", playerId)
+      .maybeSingle();
 
-    if (!member) continue;
+    if (member) {
+      await admin
+        .from("community_members")
+        .update({ rating: member.rating - delta })
+        .eq("community_id", communityId)
+        .eq("user_id", playerId);
+      continue;
+    }
 
-    await admin
-      .from("community_members")
-      .update({ rating: member.rating - delta })
+    const { data: roster } = await admin
+      .from("roster_players")
+      .select("suggested_rating")
       .eq("community_id", communityId)
-      .eq("user_id", userId);
+      .eq("id", playerId)
+      .maybeSingle();
+
+    if (roster) {
+      await admin
+        .from("roster_players")
+        .update({ suggested_rating: roster.suggested_rating - delta })
+        .eq("id", playerId);
+    }
   }
 }
 
@@ -188,7 +218,23 @@ export async function fetchRatingsForIds(
     .select("user_id, rating")
     .eq("community_id", communityId)
     .in("user_id", ids);
-  return Object.fromEntries((members ?? []).map((m) => [m.user_id, m.rating]));
+
+  const map = Object.fromEntries((members ?? []).map((m) => [m.user_id, m.rating]));
+
+  const missingIds = ids.filter((id) => map[id] === undefined);
+  if (missingIds.length) {
+    const { data: rosterRows } = await admin
+      .from("roster_players")
+      .select("id, suggested_rating")
+      .eq("community_id", communityId)
+      .in("id", missingIds);
+
+    for (const row of rosterRows ?? []) {
+      map[row.id] = row.suggested_rating;
+    }
+  }
+
+  return map;
 }
 
 export async function applyConfirmedMatch(
@@ -244,20 +290,31 @@ export async function applyConfirmedMatch(
 
     await applyRatingChanges(communityId, ratingChanges, { updateLastMatchAt: true });
 
-    const participantRows = allIds.map((id) => {
-      const before = ratingsMap[id];
-      const delta = ratingChanges[id] ?? 0;
-      return {
-        match_id: matchId,
-        user_id: id,
-        team: winnerIds.includes(id) ? ("winner" as const) : ("loser" as const),
-        rating_before: before,
-        rating_after: before + delta,
-        rating_delta: delta,
-      };
-    });
+    const { data: registeredProfiles } = await admin
+      .from("profiles")
+      .select("id")
+      .in("id", allIds);
 
-    await admin.from("match_participants").insert(participantRows);
+    const registeredIds = new Set((registeredProfiles ?? []).map((p) => p.id));
+
+    const participantRows = allIds
+      .filter((id) => registeredIds.has(id))
+      .map((id) => {
+        const before = ratingsMap[id];
+        const delta = ratingChanges[id] ?? 0;
+        return {
+          match_id: matchId,
+          user_id: id,
+          team: winnerIds.includes(id) ? ("winner" as const) : ("loser" as const),
+          rating_before: before,
+          rating_after: before + delta,
+          rating_delta: delta,
+        };
+      });
+
+    if (participantRows.length) {
+      await admin.from("match_participants").insert(participantRows);
+    }
   }
 
   await admin

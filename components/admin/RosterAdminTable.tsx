@@ -57,6 +57,10 @@ export function RosterAdminTable({ communitySlug, roster: initialRoster }: Props
     <div className="space-y-4">
       <Card className="p-4">
         <p className="text-sm font-medium text-white">Nuevo preset</p>
+        <p className="mt-1 text-xs text-zinc-500">
+          En comunidades con roster (Wild On), los presets sin reclamar aparecen al cargar partidos y
+          en el ranking. Cuando se registren, heredan su rating.
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Input
             value={displayName}
