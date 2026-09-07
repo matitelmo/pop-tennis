@@ -7,10 +7,10 @@ export const SKILL_LEVELS: {
   label: string;
   rating: number;
 }[] = [
-  { value: "beginner", label: "Principiante", rating: 800 },
-  { value: "intermediate", label: "Intermedio", rating: 1000 },
+  { value: "beginner", label: "Principiante", rating: 1000 },
+  { value: "intermediate", label: "Intermedio", rating: 1100 },
   { value: "advanced", label: "Avanzado", rating: 1200 },
-  { value: "expert", label: "Experto", rating: 1400 },
+  { value: "expert", label: "Experto", rating: 1300 },
 ];
 
 export const FORMAT_MULTIPLIERS: Record<MatchFormat, number> = {
@@ -79,5 +79,5 @@ export function getSkillLabel(level: SkillLevel): string {
 }
 
 export function getInitialRating(level: SkillLevel): number {
-  return SKILL_LEVELS.find((s) => s.value === level)?.rating ?? 800;
+  return SKILL_LEVELS.find((s) => s.value === level)?.rating ?? 1000;
 }
