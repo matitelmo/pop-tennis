@@ -9,6 +9,7 @@ import {
   type PendingMatch,
   type MatchRevealData,
 } from "@/lib/actions/match";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
 import { SetScoresEditor } from "@/components/SetScoresEditor";
 import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { PointsReveal } from "@/components/PointsReveal";
@@ -29,6 +30,7 @@ type Props = {
 };
 
 export function PendingMatchCard({ match, profileNames, currentUserId, onDone }: Props) {
+  const communitySlug = useCommunitySlug();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [disputing, setDisputing] = useState(false);
@@ -70,7 +72,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
   async function handleConfirm() {
     setLoading(true);
     setError(null);
-    const res = await confirmMatch(match.id);
+    const res = await confirmMatch(communitySlug, match.id);
     setLoading(false);
     if (!res.success) setError(res.error ?? "Error");
     else if (res.reveal) setReveal(res.reveal);
@@ -80,7 +82,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
   async function handleAcceptCounter() {
     setLoading(true);
     setError(null);
-    const res = await acceptCounterMatch(match.id);
+    const res = await acceptCounterMatch(communitySlug, match.id);
     setLoading(false);
     if (!res.success) setError(res.error ?? "Error");
     else if (res.reveal) setReveal(res.reveal);
@@ -90,7 +92,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
   async function handleDisputeToAdmin() {
     setLoading(true);
     setError(null);
-    const res = await disputeMatch(match.id);
+    const res = await disputeMatch(communitySlug, match.id);
     setLoading(false);
     if (!res.success) setError(res.error ?? "Error");
     else onDone();
@@ -104,7 +106,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
 
     setLoading(true);
     setError(null);
-    const res = await proposeCounterMatch(match.id, {
+    const res = await proposeCounterMatch(communitySlug, match.id, {
       setScores: counterScores,
       winningTeam: counterWinner,
     });

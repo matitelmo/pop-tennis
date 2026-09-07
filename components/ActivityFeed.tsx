@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { formatRelativeTime } from "@/lib/utils";
 import type { ActivityItem } from "@/lib/actions/activity";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 
 type Props = {
   items: ActivityItem[];
@@ -10,6 +12,7 @@ type Props = {
 };
 
 export function ActivityFeed({ items, showHeader = true }: Props) {
+  const communitySlug = useCommunitySlug();
   if (!items.length) {
     return (
       <p className="py-6 text-center text-sm text-zinc-500">Sin actividad reciente</p>
@@ -43,7 +46,7 @@ export function ActivityFeed({ items, showHeader = true }: Props) {
             return (
               <Link
                 key={`${item.type}-${item.id}`}
-                href={`/perfil/${item.userId}`}
+                href={communityPath(communitySlug, `perfil/${item.userId}`)}
                 className="flex items-start gap-2 rounded-xl border border-white/5 bg-white/5 px-4 py-3 transition active:scale-[0.99] hover:bg-white/10"
               >
                 {inner}

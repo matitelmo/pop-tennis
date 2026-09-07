@@ -117,12 +117,21 @@ export async function getPersonalMatchHistory(userId: string): Promise<MatchHist
   return { items, profileNames: nameMap };
 }
 
-export async function getGroupMatchHistory(): Promise<MatchHistoryResult> {
+export async function getGroupMatchHistory(communitySlug: string): Promise<MatchHistoryResult> {
   const supabase = await createClient();
+
+  const { data: community } = await supabase
+    .from("communities")
+    .select("id")
+    .eq("slug", communitySlug)
+    .single();
+
+  if (!community) return { items: [], profileNames: {} };
 
   const { data: matches } = await supabase
     .from("matches")
     .select("*")
+    .eq("community_id", community.id)
     .eq("status", "confirmed")
     .order("created_at", { ascending: false });
 

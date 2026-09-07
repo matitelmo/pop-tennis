@@ -1,13 +1,17 @@
-import type { Profile, SubscriptionStatus } from "@/types/database";
+import type { CommunityMember, SubscriptionStatus } from "@/types/database";
 
 const ACTIVE_STATUSES: SubscriptionStatus[] = ["active", "comped"];
 
-export function hasActiveSubscription(profile: Pick<Profile, "subscription_status">): boolean {
-  return ACTIVE_STATUSES.includes(profile.subscription_status);
+export function hasActiveSubscription(
+  member: Pick<CommunityMember, "subscription_status">
+): boolean {
+  return ACTIVE_STATUSES.includes(member.subscription_status);
 }
 
-export function isRatingFrozen(profile: Pick<Profile, "subscription_status">): boolean {
-  return profile.subscription_status === "past_due" || profile.subscription_status === "canceled";
+export function isRatingFrozen(
+  member: Pick<CommunityMember, "subscription_status">
+): boolean {
+  return member.subscription_status === "past_due" || member.subscription_status === "canceled";
 }
 
 export function subscriptionLabel(status: SubscriptionStatus): string {

@@ -12,7 +12,7 @@ function getResend(): Resend {
 }
 
 function fromAddress(): string {
-  return process.env.EMAIL_FROM ?? "Fence <onboarding@resend.dev>";
+  return process.env.EMAIL_FROM ?? "Pop Tennis <onboarding@resend.dev>";
 }
 
 function appUrl(path: string): string {
@@ -44,15 +44,19 @@ export async function sendMatchConfirmRequest(params: {
   toName: string;
   submitterName: string;
   scoreSummary: string;
+  communitySlug?: string;
 }): Promise<void> {
+  const partidoPath = params.communitySlug
+    ? `/${params.communitySlug}/partido`
+    : "/partido";
   await sendEmail({
     to: params.toEmail,
     subject: `${params.submitterName} cargó un partido — confirmá el resultado`,
     html: `
       <p>Hola ${params.toName},</p>
-      <p><strong>${params.submitterName}</strong> cargó un partido en Fence:</p>
+      <p><strong>${params.submitterName}</strong> cargó un partido:</p>
       <p>${params.scoreSummary}</p>
-      <p><a href="${appUrl("/partido")}">Confirmar o disputar en la app</a></p>
+      <p><a href="${appUrl(partidoPath)}">Confirmar o disputar en la app</a></p>
       <p>Si no respondés en 24 horas, el resultado se confirma automáticamente.</p>
     `,
   });
@@ -78,14 +82,18 @@ export async function sendChallengeEmail(params: {
   toEmail: string;
   toName: string;
   fromName: string;
+  communitySlug?: string;
 }): Promise<void> {
+  const rankingPath = params.communitySlug
+    ? `/${params.communitySlug}/ranking`
+    : "/ranking";
   await sendEmail({
     to: params.toEmail,
-    subject: `${params.fromName} te desafió en Fence`,
+    subject: `${params.fromName} te desafió`,
     html: `
       <p>Hola ${params.toName},</p>
-      <p><strong>${params.fromName}</strong> quiere jugar contra vos en Venice Pop Tennis League.</p>
-      <p><a href="${appUrl("/partido")}">Ver ranking y responder</a></p>
+      <p><strong>${params.fromName}</strong> quiere jugar contra vos.</p>
+      <p><a href="${appUrl(rankingPath)}">Ver ranking y responder</a></p>
     `,
   });
 }

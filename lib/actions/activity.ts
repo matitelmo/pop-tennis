@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getCommunityBySlug } from "@/lib/community/context";
 import { BADGE_DEFINITIONS } from "@/lib/constants";
 
 export type ActivityItem =
@@ -21,12 +22,19 @@ export type ActivityItem =
       userId: string;
     };
 
-export async function getActivityFeed(limit = 20): Promise<ActivityItem[]> {
+export async function getActivityFeed(
+  communitySlug: string,
+  limit = 20
+): Promise<ActivityItem[]> {
+  const community = await getCommunityBySlug(communitySlug);
+  if (!community) return [];
+
   const supabase = await createClient();
 
   const { data: matches } = await supabase
     .from("matches")
     .select("id, set_scores, winner_ids, loser_ids, rating_changes, created_at")
+    .eq("community_id", community.id)
     .eq("status", "confirmed")
     .order("created_at", { ascending: false })
     .limit(limit);

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { sendChallenge } from "@/lib/actions/challenge";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 
 type Props = {
   id: string;
@@ -21,6 +23,7 @@ export function PlayNudgeChip({
   showChallenge = false,
   canChallenge = false,
 }: Props) {
+  const communitySlug = useCommunitySlug();
   const [sent, setSent] = useState(false);
 
   const styles =
@@ -39,7 +42,7 @@ export function PlayNudgeChip({
     e.preventDefault();
     e.stopPropagation();
     if (canChallenge) {
-      const res = await sendChallenge(id);
+      const res = await sendChallenge(communitySlug, id);
       if (res.success) setSent(true);
     }
   }
@@ -47,7 +50,7 @@ export function PlayNudgeChip({
   return (
     <div className="inline-flex items-center gap-1">
       <Link
-        href={`/perfil/${id}`}
+        href={communityPath(communitySlug, `perfil/${id}`)}
         className={`min-h-[36px] rounded-full px-2.5 py-1 text-xs font-medium transition active:scale-95 ${styles}`}
       >
         {label}

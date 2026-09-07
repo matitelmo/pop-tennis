@@ -1,23 +1,29 @@
-# Fence — Venice Pop Tennis League
+# Pop Tennis — Multi-Community Platform
 
-Paid league platform for open drop-in pop tennis at Venice Beach. Forked from the Wild On friend-group app; **Wild On** continues separately at [pop-tennis](https://github.com/matitelmo/pop-tennis).
+One app, one Supabase, one Vercel deploy — multiple pop tennis communities with separate rankings and settings.
+
+## Communities
+
+| Community | URL | Signup | Matches | Subscription |
+|-----------|-----|--------|---------|--------------|
+| **Wild On** | `/wild-on/ranking` | Roster reclaim | Instant confirm | Free |
+| **Venice Beach** | `/venice-beach/ranking` | Open signup | 24h pending confirm | $10/mo |
+
+Same account can join both; ratings and subscriptions are **per community**.
 
 ## Features
 
-- Open registration with real names and gender-split leaderboards
-- Stripe subscriptions ($10/mo or $60/yr) — pay before logging your first match
-- Match confirmation (24h auto-approve) with admin dispute resolution
-- Weekly rival opt-in with win bonus
-- Availability matching to find partners
-- Quarterly “points gained” leaderboard view
+- Community-scoped Elo rankings, match history, weekly rivals
+- Configurable per community: confirmation mode, paywall, gender/quarterly boards, signup flow
+- Wild On: roster registration, instant points, auto weekly rival
+- Venice: Stripe subscriptions, match confirmation, gender split, quarterly view, opt-in weekly rival
 
 ## Setup
 
-1. Create a **new** Supabase project (do not reuse Wild On credentials).
-2. Run migrations in `supabase/migrations/` in order.
-3. Copy `.env.example` to `.env.local` and fill in values.
-4. Create Stripe products/prices and set webhook to `/api/stripe/webhook`.
-5. Configure Resend for transactional email.
+1. Use the existing Supabase project (migrations through `009_communities.sql`).
+2. Copy `.env.example` to `.env.local` and fill in values.
+3. Stripe webhook → `/api/stripe/webhook` (Venice subscriptions).
+4. Resend for transactional email (Venice match confirm).
 
 ```bash
 npm install
@@ -30,16 +36,15 @@ npm run dev
 |---------|---------|
 | `npm run dev` | Local development |
 | `npm run build` | Production build |
-| `npm run comp-seed` | Mark beta users as comped (edit emails in script) |
+| `npm test` | Unit tests |
+| `npm run comp-seed` | Mark beta users as comped |
 | `npm run recalculate-ratings` | Replay all matches from base ratings |
 | `npm run confirm-pending-matches` | Bulk-confirm pending matches |
 
 ## Deploy
 
-- **GitHub:** `matitelmo/fence` (separate repo from Wild On)
-- **Vercel:** New project linked to `fence` repo
-- **Crons:** `confirm-matches` (hourly), `decay` (daily), `match-reminders` (hourly)
+- **GitHub:** [matitelmo/pop-tennis](https://github.com/matitelmo/pop-tennis)
+- **Vercel:** Single project
+- Venice QR landing: `/join/venice-beach`
 
-## Environment
-
-See [`.env.example`](.env.example) for all required variables.
+Legacy paths (`/ranking`, `/partido`, etc.) redirect to your last community or Wild On.

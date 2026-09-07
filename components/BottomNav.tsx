@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, Plus, Swords, Trophy, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 
 type Props = {
   pendingCount?: number;
@@ -11,13 +13,16 @@ type Props = {
 
 export function BottomNav({ pendingCount = 0 }: Props) {
   const pathname = usePathname();
+  const community = useCommunitySlug();
 
   const sideTabs = [
-    { href: "/ranking", label: "Ranking", icon: Trophy },
-    { href: "/historial", label: "Historial", icon: Swords },
-    { href: "/reglas", label: "Reglas", icon: BookOpen },
-    { href: "/perfil", label: "Perfil", icon: User },
+    { href: communityPath(community, "ranking"), label: "Ranking", icon: Trophy },
+    { href: communityPath(community, "historial"), label: "Historial", icon: Swords },
+    { href: communityPath(community, "reglas"), label: "Reglas", icon: BookOpen },
+    { href: communityPath(community, "perfil"), label: "Perfil", icon: User },
   ];
+
+  const partidoHref = communityPath(community, "partido");
 
   return (
     <nav
@@ -36,11 +41,11 @@ export function BottomNav({ pendingCount = 0 }: Props) {
         ))}
 
         <Link
-          href="/partido"
-          aria-current={pathname.startsWith("/partido") ? "page" : undefined}
+          href={partidoHref}
+          aria-current={pathname.startsWith(partidoHref) ? "page" : undefined}
           className={cn(
             "relative -mt-4 flex min-h-[56px] min-w-[56px] flex-col items-center justify-center rounded-2xl bg-accent px-3 shadow-lg shadow-accent/20 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-            pathname.startsWith("/partido") && "ring-2 ring-accent/50"
+            pathname.startsWith(partidoHref) && "ring-2 ring-accent/50"
           )}
         >
           <Plus className="h-7 w-7 text-accent-foreground" strokeWidth={2.5} />

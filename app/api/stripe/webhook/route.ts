@@ -32,11 +32,13 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const userId = session.metadata?.supabase_user_id;
-    if (userId) {
+    const communityId = session.metadata?.community_id;
+    if (userId && communityId) {
       await admin
-        .from("profiles")
+        .from("community_members")
         .update({ subscription_status: "active" })
-        .eq("id", userId);
+        .eq("community_id", communityId)
+        .eq("user_id", userId);
     }
   }
 
@@ -50,22 +52,23 @@ export async function POST(request: Request) {
         ? subscription.customer
         : subscription.customer.id;
 
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("id")
+    const { data: member } = await admin
+      .from("community_members")
+      .select("community_id, user_id")
       .eq("stripe_customer_id", customerId)
       .maybeSingle();
 
-    if (profile) {
+    if (member) {
       const status =
         event.type === "customer.subscription.deleted"
           ? "canceled"
           : subscriptionStatusFromStripe(subscription.status);
 
       await admin
-        .from("profiles")
+        .from("community_members")
         .update({ subscription_status: status })
-        .eq("id", profile.id);
+        .eq("community_id", member.community_id)
+        .eq("user_id", member.user_id);
     }
   }
 

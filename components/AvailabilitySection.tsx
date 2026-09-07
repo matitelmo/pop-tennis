@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { AVAILABILITY_BLOCKS, AVAILABILITY_DAYS } from "@/lib/availability";
 import { updateAvailability } from "@/lib/actions/availability";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
@@ -12,9 +14,12 @@ import type { Availability } from "@/types/database";
 type Props = {
   initial: Availability | null;
   canEdit: boolean;
+  communitySlug?: string;
 };
 
-export function AvailabilitySection({ initial, canEdit }: Props) {
+export function AvailabilitySection({ initial, canEdit, communitySlug: slugProp }: Props) {
+  const communityFromRoute = useCommunitySlug();
+  const communitySlug = slugProp ?? communityFromRoute;
   const [availability, setAvailability] = useState<Availability>(initial ?? {});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -33,7 +38,7 @@ export function AvailabilitySection({ initial, canEdit }: Props) {
 
   async function save() {
     setSaving(true);
-    await updateAvailability(availability);
+    await updateAvailability(communitySlug, availability);
     setSaving(false);
     setSaved(true);
   }
@@ -42,7 +47,7 @@ export function AvailabilitySection({ initial, canEdit }: Props) {
     return (
       <Card>
         <p className="text-sm text-zinc-400">
-          <Link href="/subscribe" className="font-bold text-accent">
+          <Link href={communityPath(communitySlug, "subscribe")} className="font-bold text-accent">
             Suscribite
           </Link>{" "}
           para configurar cuándo podés jugar y encontrar rivales con horarios similares.

@@ -1,3 +1,5 @@
+"use client";
+
 import { ChevronRight } from "lucide-react";
 import { GhostBadge } from "@/components/GhostBadge";
 import { StreakIcons } from "@/components/StreakIcons";
@@ -6,6 +8,8 @@ import { Badge } from "@/components/ui/Badge";
 import { getAvatarColor, getInitials, cn } from "@/lib/utils";
 import type { LeaderboardEntry } from "@/lib/actions/ranking";
 import Link from "next/link";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 
 type Props = {
   entry: LeaderboardEntry;
@@ -31,6 +35,7 @@ export function LeaderboardRow({
   showActivity,
   isCurrentUser,
 }: Props) {
+  const communitySlug = useCommunitySlug();
   return (
     <div
       className={cn(
@@ -41,7 +46,7 @@ export function LeaderboardRow({
       )}
     >
       <Link
-        href={`/perfil/${entry.id}`}
+        href={communityPath(communitySlug, `perfil/${entry.id}`)}
         className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3"
       >
         <span className={cn("w-6 shrink-0 text-center text-sm font-bold", rankStyle(rank))}>

@@ -1,25 +1,38 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { setWeeklyOptIn } from "@/lib/actions/weekly-match";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import Link from "next/link";
 
 type Props = {
   optedIn: boolean;
   canOptIn: boolean;
+  communitySlug?: string;
+  showOptIn?: boolean;
 };
 
-export function WeeklyOptInToggle({ optedIn: initial, canOptIn }: Props) {
+export function WeeklyOptInToggle({
+  optedIn: initial,
+  canOptIn,
+  communitySlug: communitySlugProp,
+  showOptIn = true,
+}: Props) {
+  const communityFromRoute = useCommunitySlug();
+  const communitySlug = communitySlugProp ?? communityFromRoute;
   const [optedIn, setOptedIn] = useState(initial);
   const [loading, setLoading] = useState(false);
+
+  if (!showOptIn) return null;
 
   async function toggle() {
     if (!canOptIn) return;
     setLoading(true);
     const next = !optedIn;
-    const res = await setWeeklyOptIn(next);
+    const res = await setWeeklyOptIn(communitySlug, next);
     if (res.success) setOptedIn(next);
     setLoading(false);
   }
@@ -28,7 +41,7 @@ export function WeeklyOptInToggle({ optedIn: initial, canOptIn }: Props) {
     return (
       <Card className="border-border-subtle p-4">
         <p className="text-sm text-zinc-400">
-          <Link href="/subscribe" className="font-bold text-accent">
+          <Link href={communityPath(communitySlug, "subscribe")} className="font-bold text-accent">
             Suscribite
           </Link>{" "}
           para sumarte al rival semanal (bonus ×1.25 al ganar).

@@ -6,12 +6,14 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { WEEKLY_MATCH_WIN_MULTIPLIER } from "@/lib/constants";
 import type { WeeklyMatchAssignment } from "@/lib/actions/weekly-match";
+import { communityPath } from "@/lib/community/paths";
 
 type Props = {
   assignment: WeeklyMatchAssignment | null;
+  communitySlug: string;
 };
 
-export function WeeklyMatchCard({ assignment }: Props) {
+export function WeeklyMatchCard({ assignment, communitySlug }: Props) {
   if (!assignment) {
     return (
       <Card className="border-border-subtle">
@@ -50,7 +52,7 @@ export function WeeklyMatchCard({ assignment }: Props) {
         </p>
       </div>
       <Link
-        href={`/perfil/${opponent.id}`}
+        href={communityPath(communitySlug, `perfil/${opponent.id}`)}
         className="mt-2 inline-block text-xs font-bold text-accent underline"
       >
         Ver perfil

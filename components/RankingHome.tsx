@@ -21,8 +21,14 @@ import { PlayerSearchList } from "@/components/PlayerSearchList";
 import type { InAppNotification } from "@/lib/notifications/in-app";
 import { ChallengeButton } from "@/components/ChallengeButton";
 
+import type { CommunitySettings } from "@/lib/community/settings";
+import { communityPath } from "@/lib/community/paths";
+
 type Props = {
+  communitySlug: string;
+  communityName: string;
   entries: LeaderboardEntry[];
+  settings: CommunitySettings;
   weekly: {
     totalMatches: number;
     totalPlayers: number;
@@ -53,7 +59,10 @@ const VIEW_TABS = [
 ];
 
 export function RankingHome({
+  communitySlug,
+  communityName,
   entries,
+  settings,
   weekly,
   activity,
   pending,
@@ -66,19 +75,23 @@ export function RankingHome({
   similarPlayers,
   isLoggedIn,
 }: Props) {
+  const showGenderSplit = settings.leaderboard_gender_split;
+  const showQuarterly = settings.leaderboard_quarterly_view;
   const [gender, setGender] = useState<"male" | "female">("male");
   const [view, setView] = useState<"alltime" | "quarterly">("alltime");
 
-  const filtered = entries.filter((e) => e.gender === gender);
+  const filtered = showGenderSplit
+    ? entries.filter((e) => e.gender === gender)
+    : entries;
   const activityPreview = activity.slice(0, 5);
 
   return (
     <div className="space-y-6">
       {!isLoggedIn && (
         <Card className="border-accent/30 bg-accent-muted/20 p-4">
-          <p className="text-sm font-bold text-white">Venice Pop Tennis League</p>
-          <p className="mt-1 text-caption">Registrate gratis para unirte a la liga.</p>
-          <Link href="/register" className="mt-3 block">
+          <p className="text-sm font-bold text-white">{communityName}</p>
+          <p className="mt-1 text-caption">Registrate gratis para unirte.</p>
+          <Link href={`/register?community=${communitySlug}`} className="mt-3 block">
             <Button className="w-full" size="sm">
               Crear cuenta
             </Button>
@@ -86,12 +99,12 @@ export function RankingHome({
         </Card>
       )}
 
-      {isLoggedIn && !canUsePaidFeatures && (
+      {isLoggedIn && settings.requires_subscription && !canUsePaidFeatures && (
         <Card className="border-accent/30 p-4">
           <p className="text-sm text-zinc-300">
             Suscribite para cargar partidos y desafiar rivales.
           </p>
-          <Link href="/subscribe" className="mt-3 block">
+          <Link href={communityPath(communitySlug, "subscribe")} className="mt-3 block">
             <Button className="w-full" size="sm">
               Ver planes — $10/mo
             </Button>
@@ -111,7 +124,12 @@ export function RankingHome({
 
       {isLoggedIn && (
         <>
-          <WeeklyOptInToggle optedIn={weeklyOptIn} canOptIn={canUsePaidFeatures} />
+          <WeeklyOptInToggle
+            optedIn={weeklyOptIn}
+            canOptIn={canUsePaidFeatures}
+            communitySlug={communitySlug}
+            showOptIn={settings.weekly_rival_mode === "opt_in"}
+          />
           <WeeklyDashboard
             totalMatches={weekly.totalMatches}
             totalPlayers={weekly.totalPlayers}
@@ -123,28 +141,34 @@ export function RankingHome({
             <Card variant="interactive">
               <p className="text-sm font-bold text-white">¿Armamos un partido?</p>
               <p className="mt-1 text-caption">Meta: 1 partido por semana.</p>
-              <Link href="/partido" className="mt-3 block">
+              <Link href={communityPath(communitySlug, "partido")} className="mt-3 block">
                 <Button className="w-full" size="md">
                   Cargar partido
                 </Button>
               </Link>
             </Card>
           )}
-          {weeklyOptIn && <WeeklyMatchCard assignment={weeklyMatch} />}
+          {weeklyOptIn && (
+            <WeeklyMatchCard assignment={weeklyMatch} communitySlug={communitySlug} />
+          )}
         </>
       )}
 
-      <SegmentTabs
-        tabs={GENDER_TABS}
-        activeId={gender}
-        onChange={(id) => setGender(id as "male" | "female")}
-      />
-      <SegmentTabs
-        tabs={VIEW_TABS}
-        activeId={view}
-        onChange={(id) => setView(id as "alltime" | "quarterly")}
-        className="mb-2"
-      />
+      {showGenderSplit && (
+        <SegmentTabs
+          tabs={GENDER_TABS}
+          activeId={gender}
+          onChange={(id) => setGender(id as "male" | "female")}
+        />
+      )}
+      {showQuarterly && (
+        <SegmentTabs
+          tabs={VIEW_TABS}
+          activeId={view}
+          onChange={(id) => setView(id as "alltime" | "quarterly")}
+          className="mb-2"
+        />
+      )}
 
       <section>
         <RankingList
@@ -167,7 +191,12 @@ export function RankingHome({
                   <p className="text-caption">{p.overlapDays} días en común</p>
                 </div>
                 {canUsePaidFeatures && (
-                  <ChallengeButton opponentId={p.id} opponentName={p.full_name} size="sm" />
+                  <ChallengeButton
+                    opponentId={p.id}
+                    opponentName={p.full_name}
+                    size="sm"
+                    communitySlug={communitySlug}
+                  />
                 )}
               </Card>
             ))}
@@ -181,6 +210,7 @@ export function RankingHome({
           excludeId={currentUserId}
           title="Ver perfil de..."
           canChallenge={canUsePaidFeatures}
+          communitySlug={communitySlug}
         />
       )}
 
@@ -190,7 +220,7 @@ export function RankingHome({
             Actividad reciente
           </h2>
           {activity.length > 0 && isLoggedIn && (
-            <Link href="/historial" className="text-xs font-bold text-accent">
+            <Link href={communityPath(communitySlug, "historial")} className="text-xs font-bold text-accent">
               Ver todo →
             </Link>
           )}
@@ -201,7 +231,7 @@ export function RankingHome({
               Todavía no hay actividad en la liga.
             </p>
             {isLoggedIn && canUsePaidFeatures && (
-              <Link href="/partido" className="mt-3 block">
+              <Link href={communityPath(communitySlug, "partido")} className="mt-3 block">
                 <Button variant="secondary" className="w-full" size="sm">
                   Cargar partido
                 </Button>

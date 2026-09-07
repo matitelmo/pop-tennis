@@ -8,6 +8,8 @@ import { SegmentTabs } from "@/components/ui/SegmentTabs";
 import { Button } from "@/components/ui/Button";
 import type { LeaderboardEntry } from "@/lib/actions/ranking";
 import type { LeaderboardView } from "@/types/database";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 
 type Props = {
   entries: LeaderboardEntry[];
@@ -24,6 +26,7 @@ const MODE_TABS = [
 ];
 
 export function RankingList({ entries, currentUserId, view = "alltime" }: Props) {
+  const communitySlug = useCommunitySlug();
   const [mode, setMode] = useState<Mode>("historical");
 
   const sorted = [...entries].sort((a, b) => {
@@ -58,7 +61,7 @@ export function RankingList({ entries, currentUserId, view = "alltime" }: Props)
           <div className="py-8 text-center">
             <p className="text-caption">Todavía no hay jugadores en este ranking</p>
             {currentUserId && (
-              <Link href="/partido" className="mt-3 inline-block">
+              <Link href={communityPath(communitySlug, "partido")} className="mt-3 inline-block">
                 <Button size="sm">Sé el primero en cargar un partido</Button>
               </Link>
             )}

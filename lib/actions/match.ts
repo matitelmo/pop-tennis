@@ -11,18 +11,21 @@ import {
 } from "@/lib/match/apply-match";
 import { isWeeklyMatchOpponent } from "@/lib/actions/weekly-match";
 import { getCurrentUserProfile, getUserEmail } from "@/lib/actions/auth";
+import { getCommunityBySlug, getCommunityMember } from "@/lib/community/context";
+import { revalidateCommunityPaths } from "@/lib/community/paths";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { hasActiveSubscription } from "@/lib/subscription";
+import { allowsFormat } from "@/lib/community/settings";
 import {
   sendDisputeToAdmin,
   sendMatchConfirmRequest,
 } from "@/lib/email/send";
-import type { MatchFormat, SetScore } from "@/types/database";
+import type { MatchFormat, SetScore, Profile, CommunityMember } from "@/types/database";
 import type { MatchPointSummary } from "@/lib/match-labels";
 import { formatSetScoresWithTeams, formatTeamName } from "@/lib/match/score-display";
 
-export type SubmitMatchInput = MatchInput;
+export type SubmitMatchInput = MatchInput & { communitySlug: string };
 
 export type SubmitMatchResult = {
   success: boolean;
@@ -101,6 +104,7 @@ async function buildMatchReveal(matchId: string): Promise<MatchRevealData | null
 }
 
 async function countRecentOpponentMatches(
+  communityId: string,
   userId: string,
   opponentIds: string[]
 ): Promise<number> {
@@ -112,6 +116,7 @@ async function countRecentOpponentMatches(
   const { data: matches } = await admin
     .from("matches")
     .select("team1_ids, team2_ids, status")
+    .eq("community_id", communityId)
     .in("status", ["pending", "counter_proposed", "confirmed"])
     .gte("created_at", since.toISOString());
 
@@ -134,6 +139,7 @@ async function notifyOpponentsToConfirm(params: {
   team2Ids: string[];
   setScores: SetScore[];
   submitterName: string;
+  communitySlug: string;
 }) {
   const opponents = getOpponentTeamIds(
     params.submitterId,
@@ -158,6 +164,7 @@ async function notifyOpponentsToConfirm(params: {
       toName: names[opponentId] ?? "Jugador",
       submitterName: params.submitterName,
       scoreSummary,
+      communitySlug: params.communitySlug,
     });
   }
 }
@@ -165,20 +172,23 @@ async function notifyOpponentsToConfirm(params: {
 export async function previewMatchDelta(
   input: SubmitMatchInput
 ): Promise<SubmitMatchResult> {
+  const community = await getCommunityBySlug(input.communitySlug);
+  if (!community) return { success: false, error: "Comunidad no encontrada" };
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const allIds = [...input.team1Ids, ...input.team2Ids];
-  const ratingsMap = await fetchRatingsForIds(allIds);
+  const ratingsMap = await fetchRatingsForIds(community.id, allIds);
 
   let isWeeklyMatch = false;
   if (user && allIds.includes(user.id)) {
     const opponentIds = getOpponentTeamIds(user.id, input.team1Ids, input.team2Ids);
     isWeeklyMatch =
       input.format.startsWith("1v1_") &&
-      (await isWeeklyMatchOpponent(user.id, opponentIds));
+      (await isWeeklyMatchOpponent(community.id, user.id, opponentIds));
   }
 
   const computed = await computeMatchOutcome(input, ratingsMap, { isWeeklyMatch });
@@ -196,6 +206,9 @@ export async function previewMatchDelta(
 }
 
 export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchResult> {
+  const community = await getCommunityBySlug(input.communitySlug);
+  if (!community) return { success: false, error: "Comunidad no encontrada" };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -203,20 +216,22 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
 
   if (!user) return { success: false, error: "No autenticado" };
 
-  const profile = await getCurrentUserProfile();
-  if (!profile || !hasActiveSubscription(profile)) {
+  const member = await getCommunityMember(community.id, user.id);
+  if (!member) return { success: false, error: "No sos miembro de esta comunidad" };
+
+  if (community.settings.requires_subscription && !hasActiveSubscription(member)) {
     return {
       success: false,
       error: "Necesitás una suscripción activa para cargar partidos",
     };
   }
 
-  if (input.format.endsWith("bo1")) {
-    return { success: false, error: "Solo se permiten partidos al mejor de 3 o 5 sets" };
+  if (!allowsFormat(community.settings, input.format)) {
+    return { success: false, error: "Formato no permitido en esta comunidad" };
   }
 
   const allIds = [...input.team1Ids, ...input.team2Ids];
-  const ratingsMap = await fetchRatingsForIds(allIds);
+  const ratingsMap = await fetchRatingsForIds(community.id, allIds);
 
   const isParticipant = allIds.includes(user.id);
   const opponentIds = isParticipant
@@ -224,7 +239,7 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
     : [];
 
   if (isParticipant && opponentIds.length) {
-    const recentCount = await countRecentOpponentMatches(user.id, opponentIds);
+    const recentCount = await countRecentOpponentMatches(community.id, user.id, opponentIds);
     if (recentCount >= OPPONENT_LIMIT) {
       return {
         success: false,
@@ -236,7 +251,7 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
   const isWeeklyMatch =
     isParticipant &&
     input.format.startsWith("1v1_") &&
-    (await isWeeklyMatchOpponent(user.id, opponentIds));
+    (await isWeeklyMatchOpponent(community.id, user.id, opponentIds));
 
   const computed = await computeMatchOutcome(input, ratingsMap, { isWeeklyMatch });
 
@@ -246,7 +261,7 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
 
   const { outcome } = computed;
   const admin = createServiceClient();
-  const deadline = getConfirmationDeadline();
+  const isInstant = community.settings.match_confirmation === "instant";
 
   const { data: match, error: matchError } = await admin
     .from("matches")
@@ -256,13 +271,15 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
       winner_ids: outcome.winnerIds,
       loser_ids: outcome.loserIds,
       rating_changes: outcome.ratingChanges,
-      status: "pending",
+      status: isInstant ? "confirmed" : "pending",
       submitted_by: user.id,
-      confirmation_deadline: deadline,
+      confirmation_deadline: isInstant ? null : getConfirmationDeadline(),
       team1_ids: input.team1Ids,
       team2_ids: input.team2Ids,
       winning_team: input.winningTeam,
       is_weekly_match: isWeeklyMatch,
+      community_id: community.id,
+      confirmed_by: isInstant ? user.id : null,
     })
     .select("id")
     .single();
@@ -271,32 +288,35 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
     return { success: false, error: matchError?.message ?? "Error al guardar partido" };
   }
 
-  const submitterProfile = profile.full_name;
-  await notifyOpponentsToConfirm({
-    matchId: match.id,
-    submitterId: user.id,
-    team1Ids: input.team1Ids,
-    team2Ids: input.team2Ids,
-    setScores: input.setScores,
-    submitterName: submitterProfile,
-  });
+  if (isInstant) {
+    await applyConfirmedMatch(match.id, user.id);
+  } else {
+    const profile = await getCurrentUserProfile();
+    await notifyOpponentsToConfirm({
+      matchId: match.id,
+      submitterId: user.id,
+      team1Ids: input.team1Ids,
+      team2Ids: input.team2Ids,
+      setScores: input.setScores,
+      submitterName: profile?.full_name ?? "Jugador",
+      communitySlug: input.communitySlug,
+    });
+  }
 
-  revalidatePath("/ranking");
-  revalidatePath("/historial");
-  revalidatePath("/partido");
-  revalidatePath("/perfil");
+  revalidateCommunityPaths(input.communitySlug);
 
   return {
     success: true,
     deltas: outcome.ratingChanges,
     matchId: match.id,
-    pendingConfirmation: true,
+    pendingConfirmation: !isInstant,
     multipliers: outcome.multipliers,
     summary: outcome.summary,
   };
 }
 
 export async function confirmMatch(
+  communitySlug: string,
   matchId: string
 ): Promise<{ success: boolean; error?: string; reveal?: MatchRevealData }> {
   const supabase = await createClient();
@@ -326,10 +346,7 @@ export async function confirmMatch(
   const result = await applyConfirmedMatch(matchId, user.id);
 
   if (result.success) {
-    revalidatePath("/ranking");
-    revalidatePath("/historial");
-    revalidatePath("/partido");
-    revalidatePath("/perfil");
+    revalidateCommunityPaths(communitySlug);
     const reveal = await buildMatchReveal(matchId);
     return { success: true, reveal: reveal ?? undefined };
   }
@@ -338,6 +355,7 @@ export async function confirmMatch(
 }
 
 export async function disputeMatch(
+  communitySlug: string,
   matchId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
@@ -383,15 +401,18 @@ export async function disputeMatch(
     });
   }
 
-  revalidatePath("/ranking");
-  revalidatePath("/partido");
+  revalidateCommunityPaths(communitySlug);
   return { success: true };
 }
 
 export async function proposeCounterMatch(
+  communitySlug: string,
   matchId: string,
   input: { setScores: SetScore[]; winningTeam: 1 | 2 }
 ): Promise<{ success: boolean; error?: string }> {
+  const community = await getCommunityBySlug(communitySlug);
+  if (!community) return { success: false, error: "Comunidad no encontrada" };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -414,7 +435,7 @@ export async function proposeCounterMatch(
     return { success: false, error: "Solo un rival puede proponer otro resultado" };
   }
 
-  const ratingsMap = await fetchRatingsForIds([...team1Ids, ...team2Ids]);
+  const ratingsMap = await fetchRatingsForIds(community.id, [...team1Ids, ...team2Ids]);
   const computed = await computeMatchOutcome(
     {
       format: match.format as MatchFormat,
@@ -445,15 +466,12 @@ export async function proposeCounterMatch(
     })
     .eq("id", matchId);
 
-  revalidatePath("/ranking");
-  revalidatePath("/historial");
-  revalidatePath("/partido");
-  revalidatePath("/perfil");
-
+  revalidateCommunityPaths(communitySlug);
   return { success: true };
 }
 
 export async function acceptCounterMatch(
+  communitySlug: string,
   matchId: string
 ): Promise<{ success: boolean; error?: string; reveal?: MatchRevealData }> {
   const supabase = await createClient();
@@ -477,10 +495,7 @@ export async function acceptCounterMatch(
   const result = await applyConfirmedMatch(matchId, match.counter_submitted_by ?? user.id);
 
   if (result.success) {
-    revalidatePath("/ranking");
-    revalidatePath("/historial");
-    revalidatePath("/partido");
-    revalidatePath("/perfil");
+    revalidateCommunityPaths(communitySlug);
     const reveal = await buildMatchReveal(matchId);
     return { success: true, reveal: reveal ?? undefined };
   }
@@ -489,6 +504,7 @@ export async function acceptCounterMatch(
 }
 
 export async function adminResolveMatch(
+  communitySlug: string,
   matchId: string,
   action: "confirm" | "delete"
 ): Promise<{ success: boolean; error?: string }> {
@@ -511,18 +527,21 @@ export async function adminResolveMatch(
     if (!result.success) return result;
   }
 
-  revalidatePath("/ranking");
+  revalidateCommunityPaths(communitySlug);
   revalidatePath("/admin/disputes");
-  revalidatePath("/partido");
   return { success: true };
 }
 
-export async function getPendingMatchesForUser(userId: string): Promise<PendingMatch[]> {
+export async function getPendingMatchesForUser(
+  communityId: string,
+  userId: string
+): Promise<PendingMatch[]> {
   const admin = createServiceClient();
 
   const { data: matches } = await admin
     .from("matches")
     .select("*")
+    .eq("community_id", communityId)
     .in("status", ["pending", "counter_proposed"])
     .order("created_at", { ascending: false });
 
@@ -580,21 +599,42 @@ export async function getPendingMatchesForUser(userId: string): Promise<PendingM
     .filter((m) => m.role !== "waiting" || m.submitted_by === userId);
 }
 
-export async function getAllProfiles() {
-  const supabase = await createClient();
-  const { data } = await supabase.from("profiles").select("*").order("full_name");
-  return data ?? [];
+export async function getCommunityProfiles(
+  communityId: string
+): Promise<(Profile & { member: CommunityMember })[]> {
+  const admin = createServiceClient();
+  const { data } = await admin
+    .from("community_members")
+    .select("*, profile:profiles(*)")
+    .eq("community_id", communityId);
+
+  return (data ?? []).map((row) => {
+    const { profile, ...member } = row as CommunityMember & { profile: Profile };
+    return { ...profile, member };
+  });
 }
 
-export async function getDisputedMatches() {
+export async function getCommunityProfilesBySlug(slug: string) {
+  const community = await getCommunityBySlug(slug);
+  if (!community) return [];
+  return getCommunityProfiles(community.id);
+}
+
+export async function getDisputedMatches(communityId?: string) {
   const profile = await getCurrentUserProfile();
   if (!profile || profile.id !== process.env.ADMIN_USER_ID) return [];
 
   const admin = createServiceClient();
-  const { data } = await admin
+  let query = admin
     .from("matches")
     .select("*")
     .eq("status", "disputed")
     .order("created_at", { ascending: false });
+
+  if (communityId) {
+    query = query.eq("community_id", communityId);
+  }
+
+  const { data } = await query;
   return data ?? [];
 }

@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ChallengeButton } from "@/components/ChallengeButton";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 
 type Player = { id: string; full_name: string };
 
@@ -12,6 +14,7 @@ type Props = {
   title?: string;
   limit?: number;
   canChallenge?: boolean;
+  communitySlug?: string;
 };
 
 export function PlayerSearchList({
@@ -20,7 +23,10 @@ export function PlayerSearchList({
   title = "Buscar jugador",
   limit,
   canChallenge = false,
+  communitySlug: communitySlugProp,
 }: Props) {
+  const communityFromRoute = useCommunitySlug();
+  const communitySlug = communitySlugProp ?? communityFromRoute;
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -47,7 +53,7 @@ export function PlayerSearchList({
         {filtered.map((p) => (
           <div key={p.id} className="flex flex-col gap-1">
             <Link
-              href={`/perfil/${p.id}`}
+              href={communityPath(communitySlug, `perfil/${p.id}`)}
               className="min-h-[44px] rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-zinc-200 transition active:scale-95 hover:bg-white/20"
             >
               {p.full_name}

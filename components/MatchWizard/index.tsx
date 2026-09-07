@@ -10,7 +10,7 @@ import { PointsReveal } from "@/components/PointsReveal";
 import { MatchPointContext } from "@/components/MatchPointContext";
 import { SetScoresEditor } from "@/components/SetScoresEditor";
 import {
-  getAllProfiles,
+  getCommunityProfilesBySlug,
   previewMatchDelta,
   submitMatch,
 } from "@/lib/actions/match";
@@ -23,6 +23,8 @@ const STEP_LABELS = ["Formato", "Jugadores", "Score"];
 
 type Props = {
   currentUserId: string;
+  communitySlug: string;
+  allowedFormats: MatchFormat[];
 };
 
 type RevealState = {
@@ -39,10 +41,10 @@ type RevealState = {
   summary?: MatchPointSummary;
 };
 
-export function MatchWizard({ currentUserId }: Props) {
+export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Props) {
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<"1v1" | "2v2">("1v1");
-  const [bestOf, setBestOf] = useState<3 | 5>(3);
+  const [bestOf, setBestOf] = useState<1 | 3 | 5>(3);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [team1Ids, setTeam1Ids] = useState<string[]>([]);
   const [team2Ids, setTeam2Ids] = useState<string[]>([]);
@@ -53,6 +55,14 @@ export function MatchWizard({ currentUserId }: Props) {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [preview, setPreview] = useState<RevealState | null>(null);
   const [reveal, setReveal] = useState<RevealState | null>(null);
+
+  const allowedBestOf = Array.from(
+    new Set(
+      allowedFormats
+        .filter((f) => f.startsWith(`${mode}_`))
+        .map((f) => Number(f.split("_bo")[1]) as 1 | 3 | 5)
+    )
+  ).sort((a, b) => a - b) as (1 | 3 | 5)[];
 
   const teamSize = mode === "1v1" ? 1 : 2;
   const format: MatchFormat = `${mode}_bo${bestOf}` as MatchFormat;
@@ -76,6 +86,7 @@ export function MatchWizard({ currentUserId }: Props) {
       team2Ids,
       winningTeam,
       setScores,
+      communitySlug,
     });
     if (result.success && result.deltas) {
       const team1Won = winningTeam === 1;
@@ -109,12 +120,20 @@ export function MatchWizard({ currentUserId }: Props) {
     winningTeam,
     setScores,
     profiles,
-    scoreValidationError,
+    communitySlug,
   ]);
 
   useEffect(() => {
-    getAllProfiles().then(setProfiles);
-  }, []);
+    getCommunityProfilesBySlug(communitySlug).then((rows) =>
+      setProfiles(rows as Profile[])
+    );
+  }, [communitySlug]);
+
+  useEffect(() => {
+    if (!allowedBestOf.includes(bestOf)) {
+      setBestOf(allowedBestOf[0] ?? 3);
+    }
+  }, [mode, allowedBestOf, bestOf]);
 
   useEffect(() => {
     setTeam1Ids([]);
@@ -170,6 +189,7 @@ export function MatchWizard({ currentUserId }: Props) {
       team2Ids,
       winningTeam,
       setScores,
+      communitySlug,
     });
 
     setLoading(false);
@@ -225,8 +245,8 @@ export function MatchWizard({ currentUserId }: Props) {
           </div>
           <div>
             <p className="mb-3 text-sm font-medium text-zinc-400">Formato</p>
-            <div className="grid grid-cols-2 gap-2">
-              {([3, 5] as const).map((bo) => (
+            <div className="grid grid-cols-3 gap-2">
+              {allowedBestOf.map((bo) => (
                 <button
                   key={bo}
                   type="button"

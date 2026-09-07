@@ -73,6 +73,7 @@ export type Match = {
   counter_winning_team: 1 | 2 | null;
   counter_submitted_by: string | null;
   is_weekly_match: boolean;
+  community_id: string | null;
 };
 
 export type WeeklyMatchPairing = {
@@ -80,6 +81,7 @@ export type WeeklyMatchPairing = {
   user_id: string;
   opponent_id: string;
   created_at: string;
+  community_id: string | null;
 };
 
 export type MatchParticipant = {
@@ -116,8 +118,33 @@ export type Challenge = {
   from_user_id: string;
   to_user_id: string;
   created_at: string;
+  community_id: string | null;
 };
 
 export type LeaderboardView = "alltime" | "quarterly";
 
 export type GenderFilter = "male" | "female";
+
+export type Community = {
+  id: string;
+  slug: string;
+  name: string;
+  settings: Record<string, unknown>;
+  created_at: string;
+};
+
+export type CommunityMember = {
+  community_id: string;
+  user_id: string;
+  rating: number;
+  base_rating: number;
+  subscription_status: SubscriptionStatus;
+  stripe_customer_id: string | null;
+  weekly_opt_in: boolean;
+  availability: Availability | null;
+  last_match_at: string;
+  last_decay_at: string | null;
+  last_seen_rank: number | null;
+  last_seen_at: string | null;
+  joined_at: string;
+};

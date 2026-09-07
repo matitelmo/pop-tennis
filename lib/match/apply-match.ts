@@ -36,48 +36,59 @@ export function getConfirmationDeadline(): string {
 }
 
 export async function applyRatingChanges(
+  communityId: string,
   changes: Record<string, number>,
   options?: { updateLastMatchAt?: boolean }
 ): Promise<void> {
   const admin = createServiceClient();
   const now = new Date().toISOString();
 
-  for (const [id, delta] of Object.entries(changes)) {
-    const { data: profile } = await admin
-      .from("profiles")
+  for (const [userId, delta] of Object.entries(changes)) {
+    const { data: member } = await admin
+      .from("community_members")
       .select("rating")
-      .eq("id", id)
+      .eq("community_id", communityId)
+      .eq("user_id", userId)
       .single();
 
-    if (!profile) continue;
+    if (!member) continue;
 
     const update: { rating: number; last_match_at?: string } = {
-      rating: profile.rating + delta,
+      rating: member.rating + delta,
     };
     if (options?.updateLastMatchAt) {
       update.last_match_at = now;
     }
 
-    await admin.from("profiles").update(update).eq("id", id);
+    await admin
+      .from("community_members")
+      .update(update)
+      .eq("community_id", communityId)
+      .eq("user_id", userId);
   }
 }
 
-export async function rollbackRatingChanges(changes: Record<string, number>): Promise<void> {
+export async function rollbackRatingChanges(
+  communityId: string,
+  changes: Record<string, number>
+): Promise<void> {
   const admin = createServiceClient();
 
-  for (const [id, delta] of Object.entries(changes)) {
-    const { data: profile } = await admin
-      .from("profiles")
+  for (const [userId, delta] of Object.entries(changes)) {
+    const { data: member } = await admin
+      .from("community_members")
       .select("rating")
-      .eq("id", id)
+      .eq("community_id", communityId)
+      .eq("user_id", userId)
       .single();
 
-    if (!profile) continue;
+    if (!member) continue;
 
     await admin
-      .from("profiles")
-      .update({ rating: profile.rating - delta })
-      .eq("id", id);
+      .from("community_members")
+      .update({ rating: member.rating - delta })
+      .eq("community_id", communityId)
+      .eq("user_id", userId);
   }
 }
 
@@ -167,10 +178,17 @@ export async function computeMatchOutcome(
   };
 }
 
-export async function fetchRatingsForIds(ids: string[]): Promise<Record<string, number>> {
+export async function fetchRatingsForIds(
+  communityId: string,
+  ids: string[]
+): Promise<Record<string, number>> {
   const admin = createServiceClient();
-  const { data: profiles } = await admin.from("profiles").select("id, rating").in("id", ids);
-  return Object.fromEntries((profiles ?? []).map((p) => [p.id, p.rating]));
+  const { data: members } = await admin
+    .from("community_members")
+    .select("user_id, rating")
+    .eq("community_id", communityId)
+    .in("user_id", ids);
+  return Object.fromEntries((members ?? []).map((m) => [m.user_id, m.rating]));
 }
 
 export async function applyConfirmedMatch(
@@ -217,9 +235,14 @@ export async function applyConfirmedMatch(
     .limit(1);
 
   if (!existingParticipants?.length) {
-    const ratingsMap = await fetchRatingsForIds(allIds);
+    const communityId = match.community_id as string;
+    if (!communityId) {
+      return { success: false, error: "Partido sin comunidad" };
+    }
 
-    await applyRatingChanges(ratingChanges, { updateLastMatchAt: true });
+    const ratingsMap = await fetchRatingsForIds(communityId, allIds);
+
+    await applyRatingChanges(communityId, ratingChanges, { updateLastMatchAt: true });
 
     const participantRows = allIds.map((id) => {
       const before = ratingsMap[id];

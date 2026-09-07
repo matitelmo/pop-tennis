@@ -15,6 +15,7 @@ import { getAvatarColor, getInitials } from "@/lib/utils";
 import type { ViewablePlayer } from "@/lib/actions/player-profile";
 import type { LeaderboardEntry } from "@/lib/actions/ranking";
 import type { RatingHistoryPoint } from "@/types/database";
+import { communityPath } from "@/lib/community/paths";
 
 type Props = {
   player: ViewablePlayer;
@@ -26,6 +27,7 @@ type Props = {
   currentUserName: string;
   browsePlayers?: { id: string; full_name: string }[];
   showPlayerSearch?: boolean;
+  communitySlug: string;
 };
 
 export function PlayerProfileView({
@@ -38,6 +40,7 @@ export function PlayerProfileView({
   currentUserName,
   browsePlayers,
   showPlayerSearch = false,
+  communitySlug,
 }: Props) {
   const isOwnProfile = !player.isUnclaimed && player.id === currentUserId;
 
@@ -83,6 +86,7 @@ export function PlayerProfileView({
       <ProfileStatsSection
         userId={player.id}
         possessive={isOwnProfile ? "tuyo" : "ajeno"}
+        communitySlug={communitySlug}
       />
 
       {!player.isUnclaimed && !isOwnProfile && (
@@ -112,10 +116,11 @@ export function PlayerProfileView({
           players={browsePlayers}
           excludeId={isOwnProfile ? player.id : currentUserId}
           title="Ver perfil de..."
+          communitySlug={communitySlug}
         />
       )}
 
-      <Link href="/reglas" className="block text-center text-caption underline">
+      <Link href={communityPath(communitySlug, "reglas")} className="block text-center text-caption underline">
         Reglas y ranking
       </Link>
     </div>

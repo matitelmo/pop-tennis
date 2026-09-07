@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getAllRosterPlayers } from "@/lib/actions/roster";
+import { getCommunityBySlug } from "@/lib/community/context";
 import { getWeekStart } from "@/lib/share";
 import { suggestRivalOfTheWeek, type H2HRecord } from "@/lib/rival";
 import type { Profile } from "@/types/database";
@@ -14,25 +14,41 @@ export type WeeklyStats = {
   notPlayed: Profile[];
 };
 
-export async function getWeeklyStats(): Promise<WeeklyStats> {
+export async function getWeeklyStats(communitySlug: string): Promise<WeeklyStats> {
+  const community = await getCommunityBySlug(communitySlug);
+  if (!community) {
+    return {
+      totalMatches: 0,
+      totalPlayers: 0,
+      playedThisWeek: 0,
+      playedIds: new Set(),
+      notPlayed: [],
+    };
+  }
+
   const supabase = await createClient();
   const weekStart = getWeekStart().toISOString();
 
-  const { data: profiles } = await supabase.from("profiles").select("*");
-  const roster = await getAllRosterPlayers();
-  const all = profiles ?? [];
-  const totalPlayers = roster.length || all.length;
+  const { data: members } = await supabase
+    .from("community_members")
+    .select("user_id, profile:profiles(*)")
+    .eq("community_id", community.id);
+
+  const all = (members ?? []).map((m) => m.profile as unknown as Profile);
+  const totalPlayers = all.length;
 
   const { data: weekMatches } = await supabase
     .from("matches")
     .select("id")
+    .eq("community_id", community.id)
     .eq("status", "confirmed")
     .gte("created_at", weekStart);
 
   const { data: participants } = await supabase
     .from("match_participants")
-    .select("user_id, matches!inner(status, created_at)")
+    .select("user_id, matches!inner(status, created_at, community_id)")
     .eq("matches.status", "confirmed")
+    .eq("matches.community_id", community.id)
     .gte("matches.created_at", weekStart);
 
   const playedIds = new Set((participants ?? []).map((p) => p.user_id));
@@ -47,26 +63,40 @@ export async function getWeeklyStats(): Promise<WeeklyStats> {
   };
 }
 
-export async function getRivalSuggestion(userId: string) {
+export async function getRivalSuggestion(communitySlug: string, userId: string) {
+  const community = await getCommunityBySlug(communitySlug);
+  if (!community) return null;
+
   const supabase = await createClient();
   const weekStart = getWeekStart().toISOString();
 
-  const { data: profiles } = await supabase.from("profiles").select("*");
-  const current = profiles?.find((p) => p.id === userId);
-  if (!current || !profiles?.length) return null;
+  const { data: members } = await supabase
+    .from("community_members")
+    .select("user_id, rating, profile:profiles(*)")
+    .eq("community_id", community.id);
+
+  const profiles = (members ?? []).map((m) => ({
+    ...(m.profile as unknown as Profile),
+    rating: m.rating,
+  }));
+
+  const current = profiles.find((p) => p.id === userId);
+  if (!current || !profiles.length) return null;
 
   const { data: weekParticipants } = await supabase
     .from("match_participants")
-    .select("user_id, matches!inner(created_at, status)")
+    .select("user_id, matches!inner(created_at, status, community_id)")
     .eq("matches.status", "confirmed")
+    .eq("matches.community_id", community.id)
     .gte("matches.created_at", weekStart);
 
   const playedThisWeek = new Set((weekParticipants ?? []).map((p) => p.user_id));
 
   const { data: myRecent } = await supabase
     .from("match_participants")
-    .select("match_id")
+    .select("match_id, matches!inner(community_id)")
     .eq("user_id", userId)
+    .eq("matches.community_id", community.id)
     .order("match_id", { ascending: false })
     .limit(10);
 
@@ -93,8 +123,9 @@ export async function getRivalSuggestion(userId: string) {
 
   const { data: myParts } = await supabase
     .from("match_participants")
-    .select("match_id, team")
-    .eq("user_id", userId);
+    .select("match_id, team, matches!inner(community_id)")
+    .eq("user_id", userId)
+    .eq("matches.community_id", community.id);
 
   const h2hByOpponent: Record<string, H2HRecord> = {};
   if (myParts?.length) {

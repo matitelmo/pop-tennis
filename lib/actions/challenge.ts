@@ -1,13 +1,20 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { getCommunityBySlug, getCommunityMember } from "@/lib/community/context";
+import { revalidateCommunityPaths } from "@/lib/community/paths";
 import { getCurrentUserProfile, getUserEmail } from "@/lib/actions/auth";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { sendChallengeEmail } from "@/lib/email/send";
 
-export async function sendChallenge(toUserId: string): Promise<{ success: boolean; error?: string }> {
+export async function sendChallenge(
+  communitySlug: string,
+  toUserId: string
+): Promise<{ success: boolean; error?: string }> {
+  const community = await getCommunityBySlug(communitySlug);
+  if (!community) return { success: false, error: "Comunidad no encontrada" };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -16,7 +23,12 @@ export async function sendChallenge(toUserId: string): Promise<{ success: boolea
   if (!user) return { success: false, error: "No autenticado" };
 
   const profile = await getCurrentUserProfile();
-  if (!profile || !hasActiveSubscription(profile)) {
+  if (!profile) return { success: false, error: "Perfil no encontrado" };
+
+  const member = await getCommunityMember(community.id, user.id);
+  if (!member) return { success: false, error: "No sos miembro de esta comunidad" };
+
+  if (community.settings.requires_subscription && !hasActiveSubscription(member)) {
     return { success: false, error: "Necesitás suscripción activa para desafiar jugadores" };
   }
 
@@ -36,6 +48,7 @@ export async function sendChallenge(toUserId: string): Promise<{ success: boolea
   await admin.from("challenges").insert({
     from_user_id: user.id,
     to_user_id: toUserId,
+    community_id: community.id,
   });
 
   const opponentEmail = await getUserEmail(toUserId);
@@ -44,9 +57,10 @@ export async function sendChallenge(toUserId: string): Promise<{ success: boolea
       toEmail: opponentEmail,
       toName: opponent.full_name,
       fromName: profile.full_name,
+      communitySlug,
     });
   }
 
-  revalidatePath("/ranking");
+  revalidateCommunityPaths(communitySlug);
   return { success: true };
 }

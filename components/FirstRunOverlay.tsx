@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 
 export function FirstRunOverlay() {
+  const communitySlug = useCommunitySlug();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -19,7 +22,7 @@ export function FirstRunOverlay() {
   }
 
   return (
-    <Sheet open={show} onClose={dismiss} title="Así funciona Fence">
+    <Sheet open={show} onClose={dismiss} title="Así funciona Pop Tennis">
       <ol className="mt-4 space-y-3 text-body">
         <li className="flex gap-3">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-black text-accent-foreground">
@@ -41,7 +44,7 @@ export function FirstRunOverlay() {
         </li>
       </ol>
       <div className="mt-6 flex gap-2">
-        <Link href="/partido" onClick={dismiss} className="flex-1">
+        <Link href={communityPath(communitySlug, "partido")} onClick={dismiss} className="flex-1">
           <Button className="w-full">Cargar partido</Button>
         </Link>
         <Button variant="secondary" onClick={dismiss}>

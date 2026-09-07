@@ -1,5 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  COMMUNITY_SLUGS,
+  DEFAULT_COMMUNITY_SLUG,
+  isCommunitySlug,
+  LEGACY_MAIN_PATHS,
+} from "@/lib/community/paths";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -30,37 +36,88 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+  const segments = path.split("/").filter(Boolean);
+  const firstSegment = segments[0] ?? "";
+
+  const lastCommunity =
+    request.cookies.get("last_community")?.value ?? DEFAULT_COMMUNITY_SLUG;
+  const defaultCommunity = isCommunitySlug(lastCommunity)
+    ? lastCommunity
+    : DEFAULT_COMMUNITY_SLUG;
+
+  if (LEGACY_MAIN_PATHS.includes(firstSegment as (typeof LEGACY_MAIN_PATHS)[number])) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${defaultCommunity}/${firstSegment}${segments.length > 1 ? `/${segments.slice(1).join("/")}` : ""}`;
+    return NextResponse.redirect(url);
+  }
+
+  if (path === "/join") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/join/venice-beach";
+    return NextResponse.redirect(url);
+  }
+
+  const isCommunityRoute = isCommunitySlug(firstSegment);
+  const communitySlug = isCommunityRoute ? firstSegment : null;
+  const subPath = isCommunityRoute ? `/${segments.slice(1).join("/")}` : path;
+
   const isPublic =
     path.startsWith("/join") ||
     path.startsWith("/login") ||
     path.startsWith("/register") ||
-    path.startsWith("/ranking") ||
+    path.startsWith("/communities") ||
     path.startsWith("/api/stripe/webhook") ||
-    path.startsWith("/api/cron");
+    path.startsWith("/api/cron") ||
+    (communitySlug && subPath.startsWith("/ranking"));
+
   const isAuthRoute = path.startsWith("/login") || path.startsWith("/register");
   const isProtected =
-    path.startsWith("/partido") ||
-    path.startsWith("/historial") ||
-    path.startsWith("/reglas") ||
-    path.startsWith("/perfil") ||
-    path.startsWith("/subscribe") ||
+    subPath.startsWith("/partido") ||
+    subPath.startsWith("/historial") ||
+    subPath.startsWith("/reglas") ||
+    subPath.startsWith("/perfil") ||
+    subPath.startsWith("/subscribe") ||
     path.startsWith("/admin");
+
+  if (communitySlug && !COMMUNITY_SLUGS.includes(communitySlug)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/communities";
+    return NextResponse.redirect(url);
+  }
+
+  if (communitySlug) {
+    supabaseResponse.cookies.set("last_community", communitySlug, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  }
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    if (communitySlug) {
+      url.searchParams.set("community", communitySlug);
+    }
     return NextResponse.redirect(url);
   }
 
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/ranking";
+    const redirectCommunity =
+      request.nextUrl.searchParams.get("community") ?? defaultCommunity;
+    url.pathname = `/${redirectCommunity}/ranking`;
+    url.search = "";
     return NextResponse.redirect(url);
   }
 
   if (path === "/") {
     const url = request.nextUrl.clone();
-    url.pathname = user ? "/ranking" : "/join";
+    if (user) {
+      url.pathname = `/${defaultCommunity}/ranking`;
+    } else {
+      url.pathname = "/communities";
+    }
     return NextResponse.redirect(url);
   }
 

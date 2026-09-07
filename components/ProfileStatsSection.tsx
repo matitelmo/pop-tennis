@@ -3,10 +3,12 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { getProfileStats } from "@/lib/actions/profile-stats";
+import { communityPath } from "@/lib/community/paths";
 
 type Props = {
   userId: string;
   possessive?: "tuyo" | "ajeno";
+  communitySlug: string;
 };
 
 function RecordLine({ wins, losses }: { wins: number; losses: number }) {
@@ -21,14 +23,16 @@ function PlayerLink({
   id,
   name,
   suffix,
+  communitySlug,
 }: {
   id: string;
   name: string;
   suffix?: ReactNode;
+  communitySlug: string;
 }) {
   return (
     <Link
-      href={`/perfil/${id}`}
+      href={communityPath(communitySlug, `perfil/${id}`)}
       className="flex items-center justify-between gap-2 rounded-xl bg-surface-glass px-3 py-2 transition active:opacity-80"
     >
       <span className="truncate font-medium text-white">{name}</span>
@@ -37,7 +41,11 @@ function PlayerLink({
   );
 }
 
-export async function ProfileStatsSection({ userId, possessive = "ajeno" }: Props) {
+export async function ProfileStatsSection({
+  userId,
+  possessive = "ajeno",
+  communitySlug,
+}: Props) {
   const stats = await getProfileStats(userId);
   const isOwn = possessive === "tuyo";
 
@@ -65,6 +73,7 @@ export async function ProfileStatsSection({ userId, possessive = "ajeno" }: Prop
             <PlayerLink
               id={stats.mostPlayedOpponent.id}
               name={stats.mostPlayedOpponent.full_name}
+              communitySlug={communitySlug}
               suffix={
                 <RecordLine
                   wins={stats.mostPlayedOpponent.wins}
@@ -89,6 +98,7 @@ export async function ProfileStatsSection({ userId, possessive = "ajeno" }: Prop
                 key={h.id}
                 id={h.id}
                 name={h.full_name}
+                communitySlug={communitySlug}
                 suffix={
                   <div className="flex items-center gap-2">
                     <Badge variant="accent">👑 Hijo</Badge>
@@ -118,6 +128,7 @@ export async function ProfileStatsSection({ userId, possessive = "ajeno" }: Prop
                 key={p.id}
                 id={p.id}
                 name={p.full_name}
+                communitySlug={communitySlug}
                 suffix={
                   <div className="flex items-center gap-2">
                     <Badge variant="danger">{isOwn ? "Te domina" : "Lo domina"}</Badge>
@@ -145,6 +156,7 @@ export async function ProfileStatsSection({ userId, possessive = "ajeno" }: Prop
             <PlayerLink
               id={stats.favoritePartner.id}
               name={stats.favoritePartner.full_name}
+              communitySlug={communitySlug}
               suffix={
                 <span className="text-caption">
                   {stats.favoritePartner.matches} partidos · {stats.favoritePartner.winRate}% W

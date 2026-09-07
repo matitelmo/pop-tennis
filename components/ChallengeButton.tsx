@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { sendChallenge } from "@/lib/actions/challenge";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
 import { Button } from "@/components/ui/Button";
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
   opponentName: string;
   className?: string;
   size?: "sm" | "md" | "lg";
+  communitySlug?: string;
 };
 
 export function ChallengeButton({
@@ -16,7 +18,10 @@ export function ChallengeButton({
   opponentName,
   className = "",
   size = "md",
+  communitySlug: communitySlugProp,
 }: Props) {
+  const communityFromRoute = useCommunitySlug();
+  const communitySlug = communitySlugProp ?? communityFromRoute;
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +29,7 @@ export function ChallengeButton({
   async function handleChallenge() {
     setLoading(true);
     setError(null);
-    const res = await sendChallenge(opponentId);
+    const res = await sendChallenge(communitySlug, opponentId);
     setLoading(false);
     if (res.success) setSent(true);
     else setError(res.error ?? "Error");

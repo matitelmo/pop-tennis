@@ -9,14 +9,15 @@ import type { Match } from "@/types/database";
 type Props = {
   matches: Match[];
   profileNames: Record<string, string>;
+  communitySlugs: Record<string, string>;
 };
 
-export function AdminDisputesList({ matches, profileNames }: Props) {
+export function AdminDisputesList({ matches, profileNames, communitySlugs }: Props) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  async function resolve(matchId: string, action: "confirm" | "delete") {
+  async function resolve(matchId: string, communitySlug: string, action: "confirm" | "delete") {
     setLoadingId(matchId);
-    await adminResolveMatch(matchId, action);
+    await adminResolveMatch(communitySlug, matchId, action);
     setLoadingId(null);
     window.location.reload();
   }
@@ -46,7 +47,7 @@ export function AdminDisputesList({ matches, profileNames }: Props) {
                 size="sm"
                 className="flex-1"
                 disabled={loadingId === m.id}
-                onClick={() => resolve(m.id, "confirm")}
+                onClick={() => resolve(m.id, communitySlugs[m.community_id ?? ""] ?? "venice-beach", "confirm")}
               >
                 Confirmar original
               </Button>
@@ -56,7 +57,7 @@ export function AdminDisputesList({ matches, profileNames }: Props) {
                 size="sm"
                 className="flex-1"
                 disabled={loadingId === m.id}
-                onClick={() => resolve(m.id, "delete")}
+                onClick={() => resolve(m.id, communitySlugs[m.community_id ?? ""] ?? "venice-beach", "delete")}
               >
                 Anular
               </Button>

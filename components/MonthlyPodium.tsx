@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import type { LeaderboardEntry } from "@/lib/actions/ranking";
 import { cn } from "@/lib/utils";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 
 type Props = {
   entries: LeaderboardEntry[];
@@ -15,6 +19,7 @@ const PODIUM_COLORS = [
 ];
 
 export function MonthlyPodium({ entries }: Props) {
+  const communitySlug = useCommunitySlug();
   const top3 = [...entries]
     .sort((a, b) => b.monthlyDelta - a.monthlyDelta)
     .slice(0, 3)
@@ -38,7 +43,7 @@ export function MonthlyPodium({ entries }: Props) {
           return (
             <Link
               key={entry.id}
-              href={`/perfil/${entry.id}`}
+              href={communityPath(communitySlug, `perfil/${entry.id}`)}
               className={cn(
                 "flex w-1/3 flex-col items-center rounded-t-xl border bg-gradient-to-b p-2 text-center transition active:scale-[0.98]",
                 PODIUM_HEIGHT[idx],

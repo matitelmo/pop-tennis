@@ -4,8 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { communityPath } from "@/lib/community/paths";
 
-export function SubscribeCheckout() {
+type Props = {
+  communitySlug: string;
+};
+
+export function SubscribeCheckout({ communitySlug }: Props) {
   const [loading, setLoading] = useState<"monthly" | "annual" | null>(null);
   const router = useRouter();
 
@@ -15,7 +20,7 @@ export function SubscribeCheckout() {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, communitySlug }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
@@ -53,7 +58,12 @@ export function SubscribeCheckout() {
           </Button>
         </div>
       </Card>
-      <Button type="button" variant="ghost" className="w-full" onClick={() => router.push("/ranking")}>
+      <Button
+        type="button"
+        variant="ghost"
+        className="w-full"
+        onClick={() => router.push(communityPath(communitySlug, "ranking"))}
+      >
         Ver ranking gratis
       </Button>
     </div>

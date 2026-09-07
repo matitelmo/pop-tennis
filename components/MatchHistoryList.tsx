@@ -13,6 +13,8 @@ import {
   MatchUserDelta,
 } from "@/components/MatchParticipantPoints";
 import type { HistoryItem } from "@/lib/actions/history";
+import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { communityPath } from "@/lib/community/paths";
 
 type Props = {
   items: HistoryItem[];
@@ -21,6 +23,7 @@ type Props = {
   variant?: "personal" | "group";
   emptyMessage?: string;
   showEmptyAction?: boolean;
+  communitySlug?: string;
 };
 
 export function MatchHistoryList({
@@ -30,7 +33,10 @@ export function MatchHistoryList({
   variant = "personal",
   emptyMessage = "Todavía no hay partidos cargados",
   showEmptyAction = true,
+  communitySlug: slugProp,
 }: Props) {
+  const communityFromRoute = useCommunitySlug();
+  const communitySlug = slugProp ?? communityFromRoute;
   const [selected, setSelected] = useState<HistoryItem | null>(null);
   const isGroup = variant === "group";
 
@@ -39,7 +45,7 @@ export function MatchHistoryList({
       <div className="py-12 text-center">
         <p className="text-zinc-500">{emptyMessage}</p>
         {showEmptyAction && (
-          <Link href="/partido" className="mt-4 inline-block">
+          <Link href={communityPath(communitySlug, "partido")} className="mt-4 inline-block">
             <Button>Cargar tu primer partido</Button>
           </Link>
         )}
