@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { sendChallenge } from "@/lib/actions/challenge";
-import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { useCommunity } from "@/components/providers/CommunityProvider";
 import { Button } from "@/components/ui/Button";
 
 type Props = {
@@ -20,8 +20,8 @@ export function ChallengeButton({
   size = "md",
   communitySlug: communitySlugProp,
 }: Props) {
-  const communityFromRoute = useCommunitySlug();
-  const communitySlug = communitySlugProp ?? communityFromRoute;
+  const { slug, translate: tr } = useCommunity();
+  const communitySlug = communitySlugProp ?? slug;
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,10 +38,12 @@ export function ChallengeButton({
   if (sent) {
     return (
       <Button type="button" variant="secondary" size={size} disabled className={className}>
-        Desafío enviado
+        {tr("challengeSent")}
       </Button>
     );
   }
+
+  const firstName = opponentName.split(" ")[0];
 
   return (
     <div className={className}>
@@ -52,7 +54,7 @@ export function ChallengeButton({
         onClick={handleChallenge}
         className="w-full"
       >
-        {loading ? "Enviando..." : `Desafiar a ${opponentName.split(" ")[0]}`}
+        {loading ? tr("sending") : `${tr("challenge")} ${firstName}`}
       </Button>
       {error && <p className="mt-1 text-xs text-danger">{error}</p>}
     </div>

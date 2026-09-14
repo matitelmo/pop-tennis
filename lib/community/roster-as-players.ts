@@ -25,6 +25,7 @@ export function rosterToPickableProfile(roster: RosterPlayer): RosterPickablePro
     stripe_customer_id: null,
     weekly_opt_in: false,
     availability: null,
+    phone_number: null,
     isRosterOnly: true,
   };
 }

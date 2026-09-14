@@ -5,6 +5,7 @@ import { FirstRunOverlay } from "@/components/FirstRunOverlay";
 import { getCurrentUserProfile } from "@/lib/actions/auth";
 import { getPendingMatchesForUser } from "@/lib/actions/match";
 import { getAllCommunities, getCommunityBySlug } from "@/lib/community/context";
+import { getCommunityLocale } from "@/lib/community/locale";
 import { getIsAdmin } from "@/lib/admin/auth";
 import { checkGhostBadgeForUser } from "@/lib/badges";
 import { notFound } from "next/navigation";
@@ -35,12 +36,17 @@ export default async function MainLayout({
     await checkGhostBadgeForUser(profile.id);
   }
 
+  const locale = getCommunityLocale(communitySlug);
+  const showFindPlayers = community.settings.player_finder;
+
   return (
     <ToastProvider>
       <AppShell
         communitySlug={communitySlug}
         communityName={community.name}
         communities={communities.map((c) => ({ slug: c.slug, name: c.name }))}
+        locale={locale}
+        showFindPlayers={showFindPlayers}
         pendingCount={pendingCount}
         isAdmin={isAdmin}
       >

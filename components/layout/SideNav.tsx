@@ -2,38 +2,55 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Settings } from "lucide-react";
+import { LayoutGrid, Settings, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  COMMUNITY_NAV_ITEMS,
   getCommunityNavHref,
+  getCommunityNavItems,
   getPartidoHref,
-  PARTIDO_NAV,
+  getPartidoNav,
 } from "@/lib/navigation/community-nav";
 import { CommunitySwitcher } from "@/components/layout/CommunitySwitcher";
+import type { CommunityLocale } from "@/lib/community/locale";
+import { t } from "@/lib/i18n/messages";
 
 type Props = {
   communitySlug: string;
   communityName: string;
   communities: { slug: string; name: string }[];
+  locale: CommunityLocale;
+  showFindPlayers: boolean;
   pendingCount?: number;
   isAdmin?: boolean;
 };
+
+function splitNavItems(locale: CommunityLocale, showFindPlayers: boolean) {
+  const items = getCommunityNavItems(locale, { showFindPlayers });
+  const rulesIdx = items.findIndex((i) => i.segment === "reglas");
+  return {
+    beforePartido: items.slice(0, rulesIdx),
+    afterPartido: items.slice(rulesIdx),
+  };
+}
 
 export function SideNav({
   communitySlug,
   communityName,
   communities,
+  locale,
+  showFindPlayers,
   pendingCount = 0,
   isAdmin = false,
 }: Props) {
   const pathname = usePathname();
   const partidoHref = getPartidoHref(communitySlug);
+  const partidoNav = getPartidoNav(locale);
+  const { beforePartido, afterPartido } = splitNavItems(locale, showFindPlayers);
 
   return (
     <aside
       className="hidden lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:border-r lg:border-border-subtle lg:bg-surface-nav lg:pb-6"
-      aria-label="Navegación lateral"
+      aria-label={locale === "en" ? "Side navigation" : "Navegación lateral"}
     >
       <div className="border-b border-border-subtle py-4">
         <CommunitySwitcher
@@ -44,13 +61,15 @@ export function SideNav({
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
-        {COMMUNITY_NAV_ITEMS.slice(0, 2).map(({ segment, label, icon: Icon }) => {
-          const href = getCommunityNavHref(communitySlug, segment);
-          const active = pathname.startsWith(href);
-          return (
-            <SideNavLink key={segment} href={href} label={label} icon={Icon} active={active} />
-          );
-        })}
+        {beforePartido.map(({ segment, label, icon: Icon }) => (
+          <SideNavLink
+            key={segment}
+            href={getCommunityNavHref(communitySlug, segment)}
+            label={label}
+            icon={Icon}
+            active={pathname.startsWith(getCommunityNavHref(communitySlug, segment))}
+          />
+        ))}
 
         <Link
           href={partidoHref}
@@ -59,8 +78,8 @@ export function SideNav({
             pathname.startsWith(partidoHref) && "ring-2 ring-accent/40"
           )}
         >
-          <PARTIDO_NAV.icon className="h-5 w-5" strokeWidth={2.5} />
-          <span>{PARTIDO_NAV.label}</span>
+          <partidoNav.icon className="h-5 w-5" strokeWidth={2.5} />
+          <span>{partidoNav.label}</span>
           {pendingCount > 0 && (
             <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-warning px-1.5 text-[10px] font-black text-accent-foreground">
               {pendingCount}
@@ -68,13 +87,15 @@ export function SideNav({
           )}
         </Link>
 
-        {COMMUNITY_NAV_ITEMS.slice(2).map(({ segment, label, icon: Icon }) => {
-          const href = getCommunityNavHref(communitySlug, segment);
-          const active = pathname.startsWith(href);
-          return (
-            <SideNavLink key={segment} href={href} label={label} icon={Icon} active={active} />
-          );
-        })}
+        {afterPartido.map(({ segment, label, icon: Icon }) => (
+          <SideNavLink
+            key={segment}
+            href={getCommunityNavHref(communitySlug, segment)}
+            label={label}
+            icon={Icon}
+            active={pathname.startsWith(getCommunityNavHref(communitySlug, segment))}
+          />
+        ))}
       </nav>
 
       <div className="mt-auto space-y-1 border-t border-border-subtle px-3 pt-4">
@@ -83,7 +104,7 @@ export function SideNav({
           className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-400 transition hover:bg-white/5 hover:text-white"
         >
           <LayoutGrid className="h-5 w-5" />
-          Comunidades
+          {t(locale, "navCommunities")}
         </Link>
         {isAdmin && (
           <Link
@@ -107,7 +128,7 @@ function SideNavLink({
 }: {
   href: string;
   label: string;
-  icon: typeof Settings;
+  icon: LucideIcon;
   active: boolean;
 }) {
   return (

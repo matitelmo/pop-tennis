@@ -1,8 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { NOTIFICATION_COPY } from "@/lib/copy";
 import type { Profile } from "@/types/database";
+import type { CommunityLocale } from "@/lib/community/locale";
+import { getNotificationCopy } from "@/lib/i18n/notifications";
 
 export type InAppNotification = {
   id: string;
@@ -13,10 +14,12 @@ export type InAppNotification = {
 export async function getInAppNotifications(
   profile: Profile,
   currentRank: number,
-  entries: { id: string; full_name: string }[]
+  entries: { id: string; full_name: string }[],
+  locale: CommunityLocale = "es"
 ): Promise<InAppNotification[]> {
   const notifications: InAppNotification[] = [];
   const supabase = await createClient();
+  const copy = getNotificationCopy(locale);
 
   const daysSinceLastMatch = Math.floor(
     (Date.now() - new Date(profile.last_match_at).getTime()) / (1000 * 60 * 60 * 24)
@@ -25,7 +28,7 @@ export async function getInAppNotifications(
     notifications.push({
       id: "inactivity-day13",
       type: "inactivity",
-      message: NOTIFICATION_COPY.inactivityDay13,
+      message: copy.inactivityDay13,
     });
   }
 
@@ -39,7 +42,7 @@ export async function getInAppNotifications(
       notifications.push({
         id: `rank-pass-${passer.id}`,
         type: "rank_pass",
-        message: NOTIFICATION_COPY.rankPass(passer.full_name),
+        message: copy.rankPass(passer.full_name),
       });
     }
   }
@@ -76,7 +79,7 @@ export async function getInAppNotifications(
     notifications.push({
       id: `upset-${match.id}`,
       type: "upset",
-      message: NOTIFICATION_COPY.upset(winnerName, loserName),
+      message: copy.upset(winnerName, loserName),
     });
     break;
   }

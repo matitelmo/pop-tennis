@@ -39,6 +39,7 @@ export type Profile = {
   stripe_customer_id: string | null;
   weekly_opt_in: boolean;
   availability: Availability | null;
+  phone_number: string | null;
 };
 
 export type RosterPlayer = {

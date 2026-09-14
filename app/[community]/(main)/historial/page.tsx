@@ -37,14 +37,16 @@ export default async function HistorialPage({ params }: Props) {
           </Link>
         </Card>
       ) : (
-        <MatchHistoryList
-          items={history}
-          profileNames={profileNames}
-          currentUserId={profile.id}
-          variant="group"
-          showEmptyAction={false}
-          communitySlug={communitySlug}
-        />
+        <div className="app-page">
+          <MatchHistoryList
+            items={history}
+            profileNames={profileNames}
+            currentUserId={profile.id}
+            variant="group"
+            showEmptyAction={false}
+            communitySlug={communitySlug}
+          />
+        </div>
       )}
     </div>
   );

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { BADGE_DEFINITIONS } from "@/lib/constants";
+import { BADGE_DEFINITIONS_EN } from "@/lib/i18n/badges";
+import { useOptionalCommunity } from "@/components/providers/CommunityProvider";
 import type { BadgeCode } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -37,11 +39,14 @@ type Props = {
 
 export function BadgeGrid({ unlockedCodes }: Props) {
   const [selected, setSelected] = useState<BadgeView | null>(null);
-  const codes = Object.keys(BADGE_DEFINITIONS) as BadgeCode[];
+  const community = useOptionalCommunity();
+  const badgeSource =
+    community?.locale === "en" ? BADGE_DEFINITIONS_EN : BADGE_DEFINITIONS;
+  const codes = Object.keys(badgeSource) as BadgeCode[];
 
   const badges: BadgeView[] = [
     ...codes.map((code) => {
-      const badge = BADGE_DEFINITIONS[code];
+      const badge = badgeSource[code as keyof typeof badgeSource];
       return {
         code,
         label: badge.label,
@@ -124,7 +129,7 @@ export function BadgeGrid({ unlockedCodes }: Props) {
               className="mt-6 w-full"
               onClick={() => setSelected(null)}
             >
-              Cerrar
+              {community?.locale === "en" ? "Close" : "Cerrar"}
             </Button>
           </Card>
         </div>

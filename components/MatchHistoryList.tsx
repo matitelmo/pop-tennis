@@ -55,7 +55,7 @@ export function MatchHistoryList({
 
   return (
     <>
-      <div className="space-y-3">
+      <div className="mx-auto max-w-3xl space-y-3">
         {items.map((item) => {
           const { match } = item;
           const won = item.team === "winner";
@@ -70,45 +70,53 @@ export function MatchHistoryList({
               key={match.id}
               type="button"
               onClick={() => setSelected(item)}
-              className="w-full rounded-2xl border border-border-subtle bg-surface-glass p-4 text-left transition active:scale-[0.99] hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:flex lg:items-center lg:justify-between lg:gap-6 lg:p-5"
+              className="w-full rounded-2xl border border-border-subtle bg-surface-glass p-4 text-left transition active:scale-[0.99] hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:p-5"
             >
-              <div className="lg:min-w-0 lg:flex-1">
-                <div className="flex items-center justify-between lg:justify-start lg:gap-4">
-                  {isGroup ? (
-                    <Badge variant="default">Confirmado</Badge>
-                  ) : (
-                    <Badge variant={won ? "accent" : "danger"}>{won ? "Victoria" : "Derrota"}</Badge>
-                  )}
-                  <span className="text-xs text-zinc-500 lg:order-first">
-                    {formatDate(match.created_at)}
-                  </span>
-                </div>
-                <p className={`mt-2 text-sm text-zinc-300 lg:mt-1 ${isGroup ? "font-medium text-white" : ""}`}>
-                  {title}
-                </p>
-                <p className="mt-0.5 text-[11px] text-zinc-500 lg:hidden">
-                  {team1Name} (izq) · {team2Name} (der)
-                </p>
-              </div>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      {isGroup ? (
+                        <Badge variant="default">Confirmado</Badge>
+                      ) : (
+                        <Badge variant={won ? "accent" : "danger"}>
+                          {won ? "Victoria" : "Derrota"}
+                        </Badge>
+                      )}
+                      <span className="text-xs text-zinc-500">{formatDate(match.created_at)}</span>
+                    </div>
+                    <p
+                      className={`mt-2 text-sm leading-snug text-zinc-300 lg:text-base ${
+                        isGroup ? "font-medium text-white" : ""
+                      }`}
+                    >
+                      {title}
+                    </p>
+                    {!isGroup && (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        {team1Name} (izq) · {team2Name} (der)
+                      </p>
+                    )}
+                  </div>
 
-              <div className="mt-2 lg:mt-0 lg:flex lg:shrink-0 lg:items-center lg:gap-6">
-                <p className="font-mono text-lg text-white">{scoreStr}</p>
-                <div className="mt-2 flex items-center justify-between text-sm lg:mt-0 lg:flex-col lg:items-end lg:gap-1">
-                  <span className="text-zinc-400">{formatFormat(match.format)}</span>
-                  {!isGroup && <MatchUserDelta delta={item.rating_delta} />}
+                  <div className="flex shrink-0 items-center gap-4 sm:flex-col sm:items-end sm:gap-1">
+                    <p className="font-mono text-lg text-white">{scoreStr}</p>
+                    <div className="flex items-center gap-3 text-sm sm:flex-col sm:items-end sm:gap-1">
+                      <span className="text-zinc-400">{formatFormat(match.format)}</span>
+                      {!isGroup && <MatchUserDelta delta={item.rating_delta} />}
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {isGroup && Object.keys(ratingChanges).length > 0 && (
-                <div className="mt-2 lg:col-span-full lg:mt-3 lg:w-full">
+                {isGroup && Object.keys(ratingChanges).length > 0 && (
                   <MatchParticipantPoints
                     ratingChanges={ratingChanges}
                     profileNames={profileNames}
                     team1Ids={match.team1_ids ?? []}
                     team2Ids={match.team2_ids ?? []}
                   />
-                </div>
-              )}
+                )}
+              </div>
             </button>
           );
         })}

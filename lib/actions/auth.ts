@@ -209,6 +209,7 @@ async function registerOpen(
 ) {
   const fullName = (formData.get("fullName") as string)?.trim();
   const gender = formData.get("gender") as Gender;
+  const phoneNumber = (formData.get("phoneNumber") as string)?.trim() || null;
 
   if (!fullName || fullName.length < 2) {
     return { error: "Ingresá tu nombre completo (mínimo 2 caracteres)" };
@@ -240,6 +241,7 @@ async function registerOpen(
     skill_level: skillLevel,
     rating,
     base_rating: rating,
+    phone_number: phoneNumber,
     last_match_at: new Date().toISOString(),
     subscription_status: "none",
     weekly_opt_in: false,

@@ -1,4 +1,5 @@
 import { getCommunityBySlug } from "@/lib/community/context";
+import { getCommunityLocale, isEnglishCommunity } from "@/lib/community/locale";
 import { notFound } from "next/navigation";
 import { OpenRegisterForm } from "@/components/register/OpenRegisterForm";
 import { RosterRegisterForm } from "@/components/register/RosterRegisterForm";
@@ -16,5 +17,12 @@ export default async function RegisterPage({ searchParams }: Props) {
     return <RosterRegisterForm communitySlug={communitySlug} communityName={community.name} />;
   }
 
-  return <OpenRegisterForm communitySlug={communitySlug} communityName={community.name} />;
+  return (
+    <OpenRegisterForm
+      communitySlug={communitySlug}
+      communityName={community.name}
+      locale={getCommunityLocale(communitySlug)}
+      collectPhone={isEnglishCommunity(communitySlug)}
+    />
+  );
 }

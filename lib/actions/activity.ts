@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCommunityBySlug } from "@/lib/community/context";
 import { BADGE_DEFINITIONS } from "@/lib/constants";
+import { loadParticipantNames } from "@/lib/match/participant-names";
 
 export type ActivityItem =
   | {
@@ -47,17 +48,17 @@ export async function getActivityFeed(
 
   const allIds = new Set<string>();
   for (const m of matches ?? []) {
-    for (const id of [...(m.winner_ids as string[]), ...(m.loser_ids as string[])]) {
+    for (const id of [
+      ...(m.winner_ids as string[]),
+      ...(m.loser_ids as string[]),
+      ...((m as { team1_ids?: string[] }).team1_ids ?? []),
+      ...((m as { team2_ids?: string[] }).team2_ids ?? []),
+    ]) {
       allIds.add(id);
     }
   }
 
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name")
-    .in("id", Array.from(allIds));
-
-  const nameMap = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.full_name]));
+  const nameMap = await loadParticipantNames(Array.from(allIds));
 
   const matchItems: ActivityItem[] = (matches ?? []).map((m) => {
     const scores = (m.set_scores as { p1: number; p2: number }[])

@@ -7,8 +7,11 @@ import { getActivityFeed } from "@/lib/actions/activity";
 import { getPendingMatchesForUser, getCommunityProfiles } from "@/lib/actions/match";
 import { getCurrentUserProfile, updateLastSeenRank } from "@/lib/actions/auth";
 import { getCommunityBySlug, getCommunityMember } from "@/lib/community/context";
+import { getCommunityLocale } from "@/lib/community/locale";
 import { getInAppNotifications } from "@/lib/notifications/in-app";
+import { t } from "@/lib/i18n/messages";
 import { getPlayersWithSimilarAvailability } from "@/lib/actions/availability";
+import { getIncomingChallenges } from "@/lib/actions/challenges-inbox";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { AppHeader } from "@/components/AppHeader";
 import { RankingHome } from "@/components/RankingHome";
@@ -23,6 +26,8 @@ type Props = {
 async function RankingContent({ communitySlug }: { communitySlug: string }) {
   const community = await getCommunityBySlug(communitySlug);
   if (!community) return null;
+
+  const locale = getCommunityLocale(communitySlug);
 
   const profile = await getCurrentUserProfile();
   const entries = await getLeaderboard({ communitySlug });
@@ -58,7 +63,7 @@ async function RankingContent({ communitySlug }: { communitySlug: string }) {
     !community.settings.requires_subscription ||
     (member ? hasActiveSubscription(member) : false);
 
-  const [weekly, activity, pending, profiles, weeklyMatch, similarPlayers] =
+  const [weekly, activity, pending, profiles, weeklyMatch, similarPlayers, incomingChallenges] =
     await Promise.all([
       getWeeklyStats(communitySlug),
       getActivityFeed(communitySlug),
@@ -67,16 +72,17 @@ async function RankingContent({ communitySlug }: { communitySlug: string }) {
       canUsePaidFeatures && member?.weekly_opt_in
         ? getWeeklyMatchForUser(communitySlug, profile.id)
         : Promise.resolve(null),
-      canUsePaidFeatures && community.settings.requires_subscription
+      community.settings.player_finder
         ? getPlayersWithSimilarAvailability(communitySlug)
         : Promise.resolve([]),
+      getIncomingChallenges(communitySlug),
     ]);
 
   const profileNames = Object.fromEntries(
     profiles.map((p) => [p.id as string, p.full_name as string])
   );
   const rank = entries.findIndex((e) => e.id === profile.id) + 1;
-  const notifications = await getInAppNotifications(profile, rank, entries);
+  const notifications = await getInAppNotifications(profile, rank, entries, locale);
   if (rank > 0 && member) {
     await updateLastSeenRank(community.id, profile.id, rank);
   }
@@ -102,6 +108,7 @@ async function RankingContent({ communitySlug }: { communitySlug: string }) {
       weeklyOptIn={member?.weekly_opt_in ?? false}
       canUsePaidFeatures={canUsePaidFeatures}
       similarPlayers={similarPlayers}
+      incomingChallenges={incomingChallenges}
       isLoggedIn
       settings={community.settings}
     />
@@ -113,12 +120,15 @@ export default async function RankingPage({ params }: Props) {
   const community = await getCommunityBySlug(communitySlug);
   if (!community) notFound();
 
+  const locale = getCommunityLocale(communitySlug);
   const subtitle =
-    communitySlug === "wild-on"
-      ? "Ranking oficial"
-      : community.settings.requires_subscription
-        ? "Liga oficial"
-        : "Ranking";
+    locale === "en"
+      ? t(locale, "officialLeague")
+      : communitySlug === "wild-on"
+        ? t("es", "officialRanking")
+        : community.settings.requires_subscription
+          ? t("es", "officialLeague")
+          : t("es", "navRanking");
 
   return (
     <div className="overscroll-none">

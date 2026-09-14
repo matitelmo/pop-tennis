@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { InAppNotification } from "@/lib/notifications/in-app";
+import { useOptionalCommunity } from "@/components/providers/CommunityProvider";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "pop_dismissed_notifications";
@@ -33,6 +34,8 @@ type Props = {
 };
 
 export function InAppNotifications({ notifications }: Props) {
+  const community = useOptionalCommunity();
+  const locale = community?.locale ?? "es";
   const [visible, setVisible] = useState<InAppNotification[]>([]);
   const [enabled, setEnabled] = useState(false);
 
@@ -67,7 +70,7 @@ export function InAppNotifications({ notifications }: Props) {
           onClick={handleDismiss}
           className="mt-3 min-h-[40px] w-full rounded-xl bg-surface-glass text-sm font-bold text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-          Entendido
+          {locale === "en" ? "Got it" : "Entendido"}
         </button>
       </div>
       {visible.length > 1 && (

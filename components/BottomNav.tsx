@@ -2,24 +2,40 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCommunitySlug } from "@/hooks/useCommunitySlug";
 import {
-  COMMUNITY_NAV_ITEMS,
   getCommunityNavHref,
+  getCommunityNavItems,
   getPartidoHref,
-  PARTIDO_NAV,
+  getPartidoNav,
 } from "@/lib/navigation/community-nav";
+import type { CommunityLocale } from "@/lib/community/locale";
 
 type Props = {
   pendingCount?: number;
   className?: string;
+  communitySlug: string;
+  locale: CommunityLocale;
+  showFindPlayers: boolean;
 };
 
-export function BottomNav({ pendingCount = 0, className }: Props) {
+export function BottomNav({
+  pendingCount = 0,
+  className,
+  communitySlug,
+  locale,
+  showFindPlayers,
+}: Props) {
   const pathname = usePathname();
-  const community = useCommunitySlug();
-  const partidoHref = getPartidoHref(community);
+  const partidoHref = getPartidoHref(communitySlug);
+  const partidoNav = getPartidoNav(locale);
+  const items = getCommunityNavItems(locale, { showFindPlayers });
+
+  // Bottom nav: ranking, historial, partido CTA, profile (compact — skip find-players & rules)
+  const compact = items.filter((i) =>
+    ["ranking", "historial", "perfil"].includes(i.segment)
+  );
 
   return (
     <nav
@@ -27,11 +43,11 @@ export function BottomNav({ pendingCount = 0, className }: Props) {
         "fixed bottom-0 left-0 right-0 z-50 border-t border-border-subtle bg-surface-nav/95 backdrop-blur-lg pb-safe",
         className
       )}
-      aria-label="Navegación principal"
+      aria-label={locale === "en" ? "Main navigation" : "Navegación principal"}
     >
       <div className="mx-auto flex max-w-md items-end justify-around px-1 py-2">
-        {COMMUNITY_NAV_ITEMS.slice(0, 2).map(({ segment, label, icon: Icon }) => {
-          const href = getCommunityNavHref(community, segment);
+        {compact.slice(0, 2).map(({ segment, label, icon: Icon }) => {
+          const href = getCommunityNavHref(communitySlug, segment);
           return (
             <NavItem
               key={segment}
@@ -51,8 +67,8 @@ export function BottomNav({ pendingCount = 0, className }: Props) {
             pathname.startsWith(partidoHref) && "ring-2 ring-accent/50"
           )}
         >
-          <PARTIDO_NAV.icon className="h-7 w-7 text-accent-foreground" strokeWidth={2.5} />
-          <span className="text-[10px] font-bold text-accent-foreground">{PARTIDO_NAV.label}</span>
+          <partidoNav.icon className="h-7 w-7 text-accent-foreground" strokeWidth={2.5} />
+          <span className="text-[10px] font-bold text-accent-foreground">{partidoNav.label}</span>
           {pendingCount > 0 && (
             <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-warning px-1 text-[9px] font-black text-accent-foreground">
               {pendingCount}
@@ -60,8 +76,8 @@ export function BottomNav({ pendingCount = 0, className }: Props) {
           )}
         </Link>
 
-        {COMMUNITY_NAV_ITEMS.slice(2).map(({ segment, label, icon: Icon }) => {
-          const href = getCommunityNavHref(community, segment);
+        {compact.slice(2).map(({ segment, label, icon: Icon }) => {
+          const href = getCommunityNavHref(communitySlug, segment);
           return (
             <NavItem
               key={segment}
@@ -85,7 +101,7 @@ function NavItem({
 }: {
   href: string;
   label: string;
-  icon: typeof PARTIDO_NAV.icon;
+  icon: LucideIcon;
   active: boolean;
 }) {
   return (

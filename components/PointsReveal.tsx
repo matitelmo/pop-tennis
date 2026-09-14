@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { MatchPointContext } from "@/components/MatchPointContext";
 import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { TercerTiempoModal } from "@/components/InAppNotifications";
+import { useOptionalCommunity } from "@/components/providers/CommunityProvider";
 import { Button } from "@/components/ui/Button";
 import { buildMatchShareText, shareViaWhatsApp } from "@/lib/share";
 import { getMatchLabel, type MatchPointSummary } from "@/lib/match-labels";
@@ -25,6 +26,7 @@ type Props = {
   pending?: boolean;
   summary?: MatchPointSummary;
   onClose: () => void;
+  showCelebration?: boolean;
 };
 
 function AnimatedDelta({ value, pending }: { value: number; pending: boolean }) {
@@ -80,7 +82,10 @@ export function PointsReveal({
   pending = false,
   summary,
   onClose,
+  showCelebration = true,
 }: Props) {
+  const community = useOptionalCommunity();
+  const enableCelebration = showCelebration && community?.locale !== "en";
   const [visible, setVisible] = useState(false);
   const [showTercerTiempo, setShowTercerTiempo] = useState(false);
 
@@ -89,12 +94,12 @@ export function PointsReveal({
   }, []);
 
   useEffect(() => {
-    if (pending) return;
+    if (pending || !enableCelebration) return;
     const key = `tercer_tiempo_${scoreStr}_${winnerIds.join("-")}`;
     if (sessionStorage.getItem(key)) return;
     const timer = setTimeout(() => setShowTercerTiempo(true), 600);
     return () => clearTimeout(timer);
-  }, [pending, scoreStr, winnerIds]);
+  }, [pending, enableCelebration, scoreStr, winnerIds]);
 
   const winnerNames = winnerIds.map((id) => names[id] ?? "?");
   const loserNames = loserIds.map((id) => names[id] ?? "?");
@@ -186,7 +191,9 @@ export function PointsReveal({
           </div>
         </div>
       </div>
-      {showTercerTiempo && <TercerTiempoModal onDismiss={dismissTercerTiempo} />}
+      {showTercerTiempo && enableCelebration && (
+        <TercerTiempoModal onDismiss={dismissTercerTiempo} />
+      )}
     </>
   );
 }

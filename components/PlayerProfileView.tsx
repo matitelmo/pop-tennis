@@ -27,6 +27,7 @@ type Props = {
   currentUserName: string;
   browsePlayers?: { id: string; full_name: string }[];
   showPlayerSearch?: boolean;
+  showBadges?: boolean;
   communitySlug: string;
 };
 
@@ -40,6 +41,7 @@ export function PlayerProfileView({
   currentUserName,
   browsePlayers,
   showPlayerSearch = false,
+  showBadges = true,
   communitySlug,
 }: Props) {
   const isOwnProfile = !player.isUnclaimed && player.id === currentUserId;
@@ -105,15 +107,17 @@ export function PlayerProfileView({
             </>
           )}
 
-          <div>
-            <h3 className="mb-3 font-bold text-white">Medallas</h3>
-            {player.isUnclaimed ? (
-              <p className="mb-3 text-caption">
-                Sin medallas todavía — hace falta que el jugador se registre y juegue partidos.
-              </p>
-            ) : null}
-            <BadgeGrid unlockedCodes={badgeCodes} />
-          </div>
+          {showBadges && (
+            <div>
+              <h3 className="mb-3 font-bold text-white">Medallas</h3>
+              {player.isUnclaimed ? (
+                <p className="mb-3 text-caption">
+                  Sin medallas todavía — hace falta que el jugador se registre y juegue partidos.
+                </p>
+              ) : null}
+              <BadgeGrid unlockedCodes={badgeCodes} />
+            </div>
+          )}
 
           {showPlayerSearch && browsePlayers && browsePlayers.length > 0 && (
             <PlayerSearchList

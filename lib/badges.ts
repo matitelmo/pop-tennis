@@ -9,9 +9,10 @@ import {
 import type { BadgeCode, SetScore } from "@/types/database";
 import { GHOST_INACTIVE_DAYS } from "@/lib/constants";
 
-async function fetchConfirmedMatchRecords(): Promise<MatchRecord[]> {
+async function fetchConfirmedMatchRecords(communityId?: string): Promise<MatchRecord[]> {
   const supabase = createServiceClient();
-  const { data: matches, error } = await supabase
+
+  let query = supabase
     .from("matches")
     .select(
       `
@@ -20,6 +21,7 @@ async function fetchConfirmedMatchRecords(): Promise<MatchRecord[]> {
       set_scores,
       winner_ids,
       loser_ids,
+      community_id,
       match_participants (
         user_id,
         team,
@@ -28,6 +30,12 @@ async function fetchConfirmedMatchRecords(): Promise<MatchRecord[]> {
     `
     )
     .eq("status", "confirmed");
+
+  if (communityId) {
+    query = query.eq("community_id", communityId);
+  }
+
+  const { data: matches, error } = await query;
 
   if (error) {
     console.error("fetchConfirmedMatchRecords:", error.message);
@@ -66,7 +74,14 @@ async function setCompetitiveBadgeHolders(
 }
 
 export async function recalculateCompetitiveBadges() {
-  const matches = await fetchConfirmedMatchRecords();
+  const supabase = createServiceClient();
+  const { data: wildOn } = await supabase
+    .from("communities")
+    .select("id")
+    .eq("slug", "wild-on")
+    .maybeSingle();
+
+  const matches = await fetchConfirmedMatchRecords(wildOn?.id);
   const holders = computeCompetitiveBadgeHolders(matches);
 
   for (const badgeCode of COMPETITIVE_BADGE_CODES) {

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useCommunity } from "@/components/providers/CommunityProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { communityPath } from "@/lib/community/paths";
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function SubscribeCheckout({ communitySlug }: Props) {
+  const { translate: tr } = useCommunity();
   const [loading, setLoading] = useState<"monthly" | "annual" | null>(null);
   const router = useRouter();
 
@@ -32,10 +34,8 @@ export function SubscribeCheckout({ communitySlug }: Props) {
   return (
     <div className="space-y-4">
       <Card className="border-accent/30 p-6">
-        <h2 className="text-xl font-black text-white">Unite a la liga</h2>
-        <p className="mt-2 text-sm text-zinc-400">
-          Para cargar partidos y desafiar rivales necesitás suscripción activa.
-        </p>
+        <h2 className="text-xl font-black text-white">{tr("joinLeague")}</h2>
+        <p className="mt-2 text-sm text-zinc-400">{tr("subscriptionRequired")}</p>
         <div className="mt-6 space-y-3">
           <Button
             type="button"
@@ -44,7 +44,7 @@ export function SubscribeCheckout({ communitySlug }: Props) {
             disabled={loading !== null}
             onClick={() => checkout("monthly")}
           >
-            {loading === "monthly" ? "Redirigiendo..." : "$10 / mes"}
+            {loading === "monthly" ? tr("redirecting") : tr("perMonth")}
           </Button>
           <Button
             type="button"
@@ -54,7 +54,7 @@ export function SubscribeCheckout({ communitySlug }: Props) {
             disabled={loading !== null}
             onClick={() => checkout("annual")}
           >
-            {loading === "annual" ? "Redirigiendo..." : "$60 / año (ahorrá 50%)"}
+            {loading === "annual" ? tr("redirecting") : tr("perYear")}
           </Button>
         </div>
       </Card>
@@ -64,7 +64,7 @@ export function SubscribeCheckout({ communitySlug }: Props) {
         className="w-full"
         onClick={() => router.push(communityPath(communitySlug, "ranking"))}
       >
-        Ver ranking gratis
+        {tr("viewRankingFree")}
       </Button>
     </div>
   );

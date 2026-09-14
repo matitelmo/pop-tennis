@@ -16,6 +16,10 @@ export type CommunitySettings = {
   /** Max matches vs same rival(s) per window; 0 = no limit. */
   opponent_match_limit: number;
   opponent_match_window_days: number;
+  /** Show competitive badge trophies (Wild On group prizes). */
+  show_badges: boolean;
+  /** Enable schedule-based player finder nav + page. */
+  player_finder: boolean;
 };
 
 export const DEFAULT_COMMUNITY_SETTINGS: CommunitySettings = {
@@ -29,6 +33,8 @@ export const DEFAULT_COMMUNITY_SETTINGS: CommunitySettings = {
   allowed_formats: ["1v1_bo3", "1v1_bo5", "2v2_bo3", "2v2_bo5"],
   opponent_match_limit: 0,
   opponent_match_window_days: 30,
+  show_badges: true,
+  player_finder: true,
 };
 
 export function parseCommunitySettings(raw: unknown): CommunitySettings {
@@ -51,6 +57,8 @@ export function parseCommunitySettings(raw: unknown): CommunitySettings {
       typeof s.opponent_match_window_days === "number"
         ? Math.max(1, s.opponent_match_window_days)
         : 30,
+    show_badges: s.show_badges !== false,
+    player_finder: s.player_finder !== false,
   };
 }
 

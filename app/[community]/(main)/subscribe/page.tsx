@@ -2,7 +2,9 @@ import { SubscribeCheckout } from "@/components/SubscribeCheckout";
 import { AppHeader } from "@/components/AppHeader";
 import { getCurrentUserProfile } from "@/lib/actions/auth";
 import { getCommunityBySlug, getCommunityMember } from "@/lib/community/context";
+import { getCommunityLocale } from "@/lib/community/locale";
 import { communityPath } from "@/lib/community/paths";
+import { t } from "@/lib/i18n/messages";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
@@ -16,6 +18,8 @@ export default async function SubscribePage({ params, searchParams }: Props) {
   const { community: communitySlug } = await params;
   const community = await getCommunityBySlug(communitySlug);
   if (!community) notFound();
+
+  const locale = getCommunityLocale(communitySlug);
 
   if (!community.settings.requires_subscription) {
     redirect(communityPath(communitySlug, "ranking"));
@@ -35,15 +39,15 @@ export default async function SubscribePage({ params, searchParams }: Props) {
 
   return (
     <div>
-      <AppHeader title="Suscripción" subtitle={community.name} />
+      <AppHeader title={t(locale, "subscription")} subtitle={community.name} />
       {query.success && (
         <p className="mb-4 rounded-xl bg-success/10 px-4 py-3 text-sm text-success">
-          ¡Pago recibido! Ya podés cargar partidos.
+          {t(locale, "paymentReceived")}
         </p>
       )}
       {query.canceled && (
         <p className="mb-4 rounded-xl bg-warning/10 px-4 py-3 text-sm text-warning">
-          Pago cancelado. Podés intentar de nuevo cuando quieras.
+          {t(locale, "paymentCanceled")}
         </p>
       )}
       <SubscribeCheckout communitySlug={communitySlug} />
@@ -51,7 +55,7 @@ export default async function SubscribePage({ params, searchParams }: Props) {
         href={communityPath(communitySlug, "ranking")}
         className="mt-6 block text-center text-sm text-zinc-500"
       >
-        ← Volver al ranking
+        {t(locale, "backToRanking")}
       </Link>
     </div>
   );

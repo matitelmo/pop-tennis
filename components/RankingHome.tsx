@@ -5,6 +5,7 @@ import Link from "next/link";
 import { RankingSidebar } from "@/components/ranking/RankingSidebar";
 import { RankingList } from "@/components/RankingList";
 import { InAppNotifications } from "@/components/InAppNotifications";
+import { useCommunity } from "@/components/providers/CommunityProvider";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { SegmentTabs } from "@/components/ui/SegmentTabs";
@@ -15,6 +16,8 @@ import type { Profile } from "@/types/database";
 import { PlayerSearchList } from "@/components/PlayerSearchList";
 import type { InAppNotification } from "@/lib/notifications/in-app";
 import { ChallengeButton } from "@/components/ChallengeButton";
+import { PendingChallengesBanner } from "@/components/PendingChallengesBanner";
+import type { IncomingChallenge } from "@/lib/actions/challenges-inbox";
 import type { WeeklyMatchAssignment } from "@/lib/actions/weekly-match";
 import type { CommunitySettings } from "@/lib/community/settings";
 import { communityPath } from "@/lib/community/paths";
@@ -40,6 +43,7 @@ type Props = {
   weeklyOptIn: boolean;
   canUsePaidFeatures: boolean;
   similarPlayers: (Profile & { overlapDays: number })[];
+  incomingChallenges?: IncomingChallenge[];
   isLoggedIn: boolean;
 };
 
@@ -68,15 +72,17 @@ export function RankingHome({
   weeklyOptIn,
   canUsePaidFeatures,
   similarPlayers,
+  incomingChallenges = [],
   isLoggedIn,
 }: Props) {
+  const { translate: tr, showFindPlayers } = useCommunity();
   const showGenderSplit = settings.leaderboard_gender_split;
   const showQuarterly = settings.leaderboard_quarterly_view;
   const [gender, setGender] = useState<"male" | "female">("male");
   const [view, setView] = useState<"alltime" | "quarterly">("alltime");
 
   const filtered = showGenderSplit
-    ? entries.filter((e) => e.gender === gender)
+    ? entries.filter((e) => e.gender === gender || !e.gender)
     : entries;
 
   const sidebarProps = {
@@ -122,6 +128,13 @@ export function RankingHome({
 
       <InAppNotifications notifications={notifications} />
 
+      {isLoggedIn && incomingChallenges.length > 0 && (
+        <PendingChallengesBanner
+          challenges={incomingChallenges}
+          communitySlug={communitySlug}
+        />
+      )}
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
         <div className="order-2 space-y-6 lg:order-1">
           {showGenderSplit && (
@@ -145,15 +158,27 @@ export function RankingHome({
 
           {isLoggedIn && similarPlayers.length > 0 && (
             <section>
-              <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-zinc-400">
-                Horarios similares
-              </h2>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-zinc-400">
+                  {tr("similarSchedules")}
+                </h2>
+                {showFindPlayers && (
+                  <Link
+                    href={communityPath(communitySlug, "find-players")}
+                    className="text-xs font-bold text-accent"
+                  >
+                    {tr("navFindPlayers")} →
+                  </Link>
+                )}
+              </div>
               <div className="space-y-2">
                 {similarPlayers.slice(0, 5).map((p) => (
                   <Card key={p.id} className="flex items-center justify-between p-3">
                     <div>
                       <p className="font-semibold text-white">{p.full_name}</p>
-                      <p className="text-caption">{p.overlapDays} días en común</p>
+                      <p className="text-caption">
+                        {p.overlapDays} {tr("daysInCommon")}
+                      </p>
                     </div>
                     {canUsePaidFeatures && (
                       <ChallengeButton
@@ -173,7 +198,7 @@ export function RankingHome({
             <PlayerSearchList
               players={entries.map((e) => ({ id: e.id, full_name: e.full_name }))}
               excludeId={currentUserId}
-              title="Ver perfil de..."
+              title={tr("viewProfileOf")}
               canChallenge={canUsePaidFeatures}
               communitySlug={communitySlug}
             />

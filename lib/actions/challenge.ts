@@ -7,6 +7,7 @@ import { revalidateCommunityPaths } from "@/lib/community/paths";
 import { getCurrentUserProfile, getUserEmail } from "@/lib/actions/auth";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { sendChallengeEmail } from "@/lib/email/send";
+import { getCommunityLocale } from "@/lib/community/locale";
 
 export async function sendChallenge(
   communitySlug: string,
@@ -58,6 +59,7 @@ export async function sendChallenge(
       toName: opponent.full_name,
       fromName: profile.full_name,
       communitySlug,
+      locale: getCommunityLocale(communitySlug),
     });
   }
 

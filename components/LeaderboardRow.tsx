@@ -66,6 +66,11 @@ export function LeaderboardRow({
               {entry.full_name}
             </p>
             {isCurrentUser && <Badge variant="accent">Vos</Badge>}
+            {entry.isUnclaimed && (
+              <Badge variant="default" title="Todavía no se registró en la app">
+                Sin reclamar
+              </Badge>
+            )}
             {entry.isFrozen && <Badge variant="default">Congelado</Badge>}
             {entry.isGhost && <GhostBadge compact />}
           </div>

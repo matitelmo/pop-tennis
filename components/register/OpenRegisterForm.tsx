@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Trophy, AlertCircle } from "lucide-react";
 import { register } from "@/lib/actions/auth";
 import { SKILL_LEVELS } from "@/lib/constants";
+import type { CommunityLocale } from "@/lib/community/locale";
+import { getSkillLabelLocalized, t } from "@/lib/i18n/messages";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
@@ -15,13 +17,22 @@ import type { Gender, SkillLevel } from "@/types/database";
 type Props = {
   communitySlug: string;
   communityName: string;
+  locale?: CommunityLocale;
+  collectPhone?: boolean;
 };
 
-export function OpenRegisterForm({ communitySlug, communityName }: Props) {
+export function OpenRegisterForm({
+  communitySlug,
+  communityName,
+  locale = "es",
+  collectPhone = false,
+}: Props) {
+  const isEn = locale === "en";
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [gender, setGender] = useState<Gender | null>(null);
   const [skillLevel, setSkillLevel] = useState<SkillLevel>("intermediate");
 
@@ -34,6 +45,7 @@ export function OpenRegisterForm({ communitySlug, communityName }: Props) {
     formData.set("fullName", fullName);
     formData.set("gender", gender ?? "");
     formData.set("skillLevel", skillLevel);
+    if (collectPhone) formData.set("phoneNumber", phone);
     const result = await register(formData);
     if (result?.error) {
       setError(result.error);
@@ -42,7 +54,9 @@ export function OpenRegisterForm({ communitySlug, communityName }: Props) {
   }
 
   const canGoStep2 =
-    fullName.trim().length >= 2 && (gender === "male" || gender === "female");
+    fullName.trim().length >= 2 &&
+    (gender === "male" || gender === "female") &&
+    (!collectPhone || phone.trim().length >= 7);
 
   return (
     <Card variant="elevated" className="rounded-3xl p-8">
@@ -51,34 +65,59 @@ export function OpenRegisterForm({ communitySlug, communityName }: Props) {
           <Trophy className="h-8 w-8 text-accent" />
         </div>
         <h1 className="mt-4 text-display">{communityName}</h1>
-        <p className="mt-1 text-sm text-zinc-400">Registro gratis</p>
+        <p className="mt-1 text-sm text-zinc-400">
+          {isEn ? "Free registration" : "Registro gratis"}
+        </p>
       </div>
 
-      <StepIndicator steps={["Identidad", "Cuenta"]} current={step} className="mb-6" />
+      <StepIndicator
+        steps={isEn ? ["Profile", "Account"] : ["Identidad", "Cuenta"]}
+        current={step}
+        className="mb-6"
+      />
 
       <form action={handleSubmit} className="space-y-4">
         {step === 1 && (
           <>
             <div>
-              <Label htmlFor="fullName">Nombre completo</Label>
+              <Label htmlFor="fullName">{isEn ? "Full name" : "Nombre completo"}</Label>
               <Input
                 id="fullName"
                 name="fullName"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="Como aparecés en la liga"
+                placeholder={isEn ? "As shown on the leaderboard" : "Como aparecés en la liga"}
                 required
                 minLength={2}
               />
             </div>
 
+            {collectPhone && (
+              <div>
+                <Label htmlFor="phone">{t(locale, "phoneNumber")}</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder={t(locale, "phonePlaceholder")}
+                  autoComplete="tel"
+                  required
+                  minLength={7}
+                />
+                <p className="mt-1 text-xs text-zinc-500">{t(locale, "phoneHint")}</p>
+              </div>
+            )}
+
             <div>
-              <p className="mb-2 text-sm font-medium text-zinc-400">Categoría</p>
+              <p className="mb-2 text-sm font-medium text-zinc-400">
+                {isEn ? "Division" : "Categoría"}
+              </p>
               <div className="grid grid-cols-2 gap-2">
                 {(
                   [
-                    { value: "male" as const, label: "Hombres" },
-                    { value: "female" as const, label: "Mujeres" },
+                    { value: "male" as const, label: t(locale, "genderMale") },
+                    { value: "female" as const, label: t(locale, "genderFemale") },
                   ] as const
                 ).map((g) => (
                   <button
@@ -99,7 +138,9 @@ export function OpenRegisterForm({ communitySlug, communityName }: Props) {
             </div>
 
             <div>
-              <p className="mb-2 text-sm font-medium text-zinc-400">Nivel inicial</p>
+              <p className="mb-2 text-sm font-medium text-zinc-400">
+                {isEn ? "Starting level" : "Nivel inicial"}
+              </p>
               <div className="grid grid-cols-2 gap-2">
                 {SKILL_LEVELS.map((level) => (
                   <button
@@ -113,13 +154,17 @@ export function OpenRegisterForm({ communitySlug, communityName }: Props) {
                         : "border-border bg-surface-glass"
                     )}
                   >
-                    <span className="font-bold text-white">{level.label}</span>
+                    <span className="font-bold text-white">
+                      {getSkillLabelLocalized(level.value, locale)}
+                    </span>
                     <span className="block text-xs text-zinc-400">{level.rating} pts</span>
                   </button>
                 ))}
               </div>
               <p className="mt-2 text-xs text-zinc-500">
-                Arrancás con ~{ratingPreview} pts según tu nivel.
+                {isEn
+                  ? `You start around ${ratingPreview} pts based on your level.`
+                  : `Arrancás con ~${ratingPreview} pts según tu nivel.`}
               </p>
             </div>
 
@@ -130,7 +175,7 @@ export function OpenRegisterForm({ communitySlug, communityName }: Props) {
               className="w-full"
               size="lg"
             >
-              Siguiente
+              {isEn ? "Next" : "Siguiente"}
             </Button>
           </>
         )}
@@ -142,7 +187,7 @@ export function OpenRegisterForm({ communitySlug, communityName }: Props) {
               <Input id="email" name="email" type="email" required autoComplete="email" />
             </div>
             <div>
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">{isEn ? "Password" : "Contraseña"}</Label>
               <Input
                 id="password"
                 name="password"
@@ -153,8 +198,9 @@ export function OpenRegisterForm({ communitySlug, communityName }: Props) {
               />
             </div>
             <p className="text-xs text-zinc-500">
-              Podés ver el ranking gratis. Para cargar partidos necesitás suscripción ($10/mo o
-              $60/año).
+              {isEn
+                ? "Ranking is free. Logging matches requires a subscription ($10/mo or $60/yr)."
+                : "Podés ver el ranking gratis. Para cargar partidos necesitás suscripción ($10/mo o $60/año)."}
             </p>
             {error && (
               <div className="flex items-start gap-2 rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">
@@ -170,10 +216,16 @@ export function OpenRegisterForm({ communitySlug, communityName }: Props) {
                 className="flex-1"
                 size="lg"
               >
-                Atrás
+                {isEn ? "Back" : "Atrás"}
               </Button>
               <Button type="submit" disabled={loading} className="flex-1" size="lg">
-                {loading ? "Creando..." : "Crear cuenta"}
+                {loading
+                  ? isEn
+                    ? "Creating..."
+                    : "Creando..."
+                  : isEn
+                    ? "Create account"
+                    : "Crear cuenta"}
               </Button>
             </div>
           </>
@@ -181,9 +233,9 @@ export function OpenRegisterForm({ communitySlug, communityName }: Props) {
       </form>
 
       <p className="mt-6 text-center text-sm text-zinc-500">
-        ¿Ya tenés cuenta?{" "}
+        {isEn ? "Already have an account? " : "¿Ya tenés cuenta? "}
         <Link href={`/login?community=${communitySlug}`} className="font-bold text-accent">
-          Iniciar sesión
+          {isEn ? "Log in" : "Iniciar sesión"}
         </Link>
       </p>
     </Card>

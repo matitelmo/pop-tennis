@@ -60,7 +60,7 @@ export default async function PerfilAjenoPage({ params }: Props) {
       />
 
       <PlayerProfileView
-        player={player}
+        player={entry ? { ...player, rating: entry.rating } : player}
         rank={rank}
         entry={entry}
         badgeCodes={badges.map((b) => b.badge_code)}
@@ -69,6 +69,7 @@ export default async function PerfilAjenoPage({ params }: Props) {
         currentUserName={currentUser.full_name}
         browsePlayers={browsePlayers}
         showPlayerSearch
+        showBadges={community.settings.show_badges}
         communitySlug={communitySlug}
       />
     </div>

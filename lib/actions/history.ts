@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Match } from "@/types/database";
 import { getOpponentIds } from "@/lib/match/participants";
 import { formatTeamName } from "@/lib/match/score-display";
+import { loadParticipantNames } from "@/lib/match/participant-names";
 
 export type HistoryItem = {
   rating_delta: number | null;
@@ -27,16 +28,6 @@ function buildHeadline(match: Match, nameMap: Record<string, string>): string {
   const team1Name = formatTeamName((match.team1_ids ?? []) as string[], nameMap);
   const team2Name = formatTeamName((match.team2_ids ?? []) as string[], nameMap);
   return `${team1Name} vs ${team2Name}`;
-}
-
-async function loadProfileNames(ids: string[]): Promise<Record<string, string>> {
-  if (!ids.length) return {};
-  const supabase = await createClient();
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, full_name")
-    .in("id", ids);
-  return Object.fromEntries((profiles ?? []).map((profile) => [profile.id, profile.full_name]));
 }
 
 function collectParticipantIds(matches: Match[]): string[] {
@@ -101,7 +92,9 @@ export async function getPersonalMatchHistory(userId: string): Promise<MatchHist
     .map((row) => mapParticipationItem(row))
     .filter((item): item is HistoryItem => item !== null);
 
-  const nameMap = await loadProfileNames(collectParticipantIds(confirmed.map((item) => item.match)));
+  const nameMap = await loadParticipantNames(
+    collectParticipantIds(confirmed.map((item) => item.match))
+  );
 
   const items = confirmed
     .map((item) => ({
@@ -136,7 +129,7 @@ export async function getGroupMatchHistory(communitySlug: string): Promise<Match
     .order("created_at", { ascending: false });
 
   const typedMatches = (matches ?? []) as Match[];
-  const nameMap = await loadProfileNames(collectParticipantIds(typedMatches));
+  const nameMap = await loadParticipantNames(collectParticipantIds(typedMatches));
 
   const items: HistoryItem[] = typedMatches.map((match) => ({
     rating_delta: null,

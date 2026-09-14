@@ -1,5 +1,3 @@
-"use server";
-
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { logout, getCurrentUserProfile } from "@/lib/actions/auth";
@@ -17,13 +15,15 @@ import { Button } from "@/components/ui/Button";
 import { getLeaderboard } from "@/lib/actions/ranking";
 import { getCommunityProfiles } from "@/lib/actions/match";
 import { getCommunityBySlug, getCommunityMember, getUserCommunities } from "@/lib/community/context";
+import { getCommunityLocale } from "@/lib/community/locale";
 import { communityPath } from "@/lib/community/paths";
-import { getSkillLabel } from "@/lib/constants";
+import { getSkillLabelLocalized, t } from "@/lib/i18n/messages";
 import { hasActiveSubscription, subscriptionLabel as subLabel } from "@/lib/subscription";
 import { getAvatarColor, getInitials } from "@/lib/utils";
 import { ProfileStatsSection } from "@/components/ProfileStatsSection";
 import { PlayerSearchList } from "@/components/PlayerSearchList";
 import { AvailabilitySection } from "@/components/AvailabilitySection";
+import { PhoneNumberSection } from "@/components/PhoneNumberSection";
 import { LogOut } from "lucide-react";
 
 type Props = {
@@ -35,6 +35,7 @@ export default async function PerfilPage({ params }: Props) {
   const community = await getCommunityBySlug(communitySlug);
   if (!community) notFound();
 
+  const locale = getCommunityLocale(communitySlug);
   const profile = await getCurrentUserProfile();
   if (!profile) redirect(`/login?community=${communitySlug}`);
 
@@ -59,7 +60,7 @@ export default async function PerfilPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <AppHeader
-        title="Mi Perfil"
+        title={t(locale, "myProfile")}
         subtitle={community.name}
         action={
           <form action={logout}>
@@ -72,7 +73,7 @@ export default async function PerfilPage({ params }: Props) {
 
       {userCommunities.length > 1 && (
         <Card className="p-4">
-          <p className="text-sm text-zinc-400">Tus comunidades</p>
+          <p className="text-sm text-zinc-400">{t(locale, "yourCommunities")}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {userCommunities.map((c) => (
               <Link
@@ -103,17 +104,22 @@ export default async function PerfilPage({ params }: Props) {
             <GhostBadge />
           </div>
         )}
-        <p className="text-body">{getSkillLabel(profile.skill_level)}</p>
+        <p className="text-body">{getSkillLabelLocalized(profile.skill_level, locale)}</p>
         {profile.gender && (
           <p className="text-caption capitalize">
-            {profile.gender === "male" ? "Hombres" : "Mujeres"}
+            {profile.gender === "male" ? t(locale, "genderMale") : t(locale, "genderFemale")}
           </p>
         )}
         <ProfileRating rating={member.rating} />
         {community.settings.requires_subscription && (
           <p className="mt-1 text-caption">{subLabel(member.subscription_status)}</p>
         )}
-        {rank > 0 && <p className="mt-1 text-caption">Puesto #{rank}</p>}
+        {rank > 0 && (
+          <p className="mt-1 text-caption">
+            {t(locale, "rankPosition")}
+            {rank}
+          </p>
+        )}
         {myEntry && (
           <div className="mt-4 flex justify-center">
             <StreakIcons streak={myEntry.streak} />
@@ -122,18 +128,25 @@ export default async function PerfilPage({ params }: Props) {
         {community.settings.requires_subscription && !canUsePaidFeatures && (
           <Link href={communityPath(communitySlug, "subscribe")} className="mt-4 block">
             <Button size="sm" className="w-full">
-              Activar suscripción
+              {t(locale, "activateSubscription")}
             </Button>
           </Link>
         )}
       </Card>
 
-      {community.settings.requires_subscription && (
-        <AvailabilitySection
-          initial={member.availability}
-          canEdit={canUsePaidFeatures}
-          communitySlug={communitySlug}
-        />
+      {community.settings.player_finder && (
+        <>
+          <PhoneNumberSection
+            initial={profile.phone_number}
+            canEdit
+            communitySlug={communitySlug}
+          />
+          <AvailabilitySection
+            initial={member.availability}
+            canEdit
+            communitySlug={communitySlug}
+          />
+        </>
       )}
 
       <RatingChart points={ratingHistory} />
@@ -146,10 +159,12 @@ export default async function PerfilPage({ params }: Props) {
         currentUserId={profile.id}
       />
 
-      <div>
-        <h3 className="mb-3 font-bold text-white">Medallas</h3>
-        <BadgeGrid unlockedCodes={badges.map((b) => b.badge_code)} />
-      </div>
+      {community.settings.show_badges && (
+        <div>
+          <h3 className="mb-3 font-bold text-white">{t(locale, "medals")}</h3>
+          <BadgeGrid unlockedCodes={badges.map((b) => b.badge_code)} />
+        </div>
+      )}
 
       <PlayerSearchList
         players={allProfiles.map((p) => ({
@@ -157,13 +172,16 @@ export default async function PerfilPage({ params }: Props) {
           full_name: p.full_name as string,
         }))}
         excludeId={profile.id}
-        title="Ver perfil de..."
+        title={t(locale, "viewProfileOf")}
         canChallenge={canUsePaidFeatures && community.settings.requires_subscription}
         communitySlug={communitySlug}
       />
 
-      <Link href={communityPath(communitySlug, "reglas")} className="block text-center text-caption underline">
-        Reglas y ranking
+      <Link
+        href={communityPath(communitySlug, "reglas")}
+        className="block text-center text-caption underline"
+      >
+        {t(locale, "rulesAndRanking")}
       </Link>
     </div>
   );

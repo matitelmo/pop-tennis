@@ -83,17 +83,27 @@ export async function sendChallengeEmail(params: {
   toName: string;
   fromName: string;
   communitySlug?: string;
+  locale?: "en" | "es";
 }): Promise<void> {
   const rankingPath = params.communitySlug
-    ? `/${params.communitySlug}/ranking`
+    ? `/${params.communitySlug}/find-players`
     : "/ranking";
+  const isEn = params.locale === "en";
   await sendEmail({
     to: params.toEmail,
-    subject: `${params.fromName} te desafió`,
-    html: `
+    subject: isEn
+      ? `${params.fromName} wants to play you`
+      : `${params.fromName} te desafió`,
+    html: isEn
+      ? `
+      <p>Hi ${params.toName},</p>
+      <p><strong>${params.fromName}</strong> wants to schedule a match with you.</p>
+      <p><a href="${appUrl(rankingPath)}">Open player finder</a></p>
+    `
+      : `
       <p>Hola ${params.toName},</p>
       <p><strong>${params.fromName}</strong> quiere jugar contra vos.</p>
-      <p><a href="${appUrl(rankingPath)}">Ver ranking y responder</a></p>
+      <p><a href="${appUrl(rankingPath)}">Ver buscador de rivales</a></p>
     `,
   });
 }
