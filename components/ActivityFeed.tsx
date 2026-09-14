@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { formatRelativeTime } from "@/lib/utils";
 import type { ActivityItem } from "@/lib/actions/activity";
-import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { useCommunity } from "@/components/providers/CommunityProvider";
 import { communityPath } from "@/lib/community/paths";
 
 type Props = {
@@ -12,10 +12,12 @@ type Props = {
 };
 
 export function ActivityFeed({ items, showHeader = true }: Props) {
-  const communitySlug = useCommunitySlug();
-  if (!items.length) {
+  const { slug: communitySlug, locale, translate: tr, showBadges } = useCommunity();
+  const visibleItems = showBadges ? items : items.filter((item) => item.type !== "badge");
+
+  if (!visibleItems.length) {
     return (
-      <p className="py-6 text-center text-sm text-zinc-500">Sin actividad reciente</p>
+      <p className="py-6 text-center text-sm text-zinc-500">{tr("noRecentActivity")}</p>
     );
   }
 
@@ -23,11 +25,11 @@ export function ActivityFeed({ items, showHeader = true }: Props) {
     <section className={showHeader ? "mt-6" : ""}>
       {showHeader && (
         <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-zinc-400">
-          Actividad reciente
+          {tr("recentActivity")}
         </h2>
       )}
       <div className="space-y-2">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const inner = (
             <>
               {item.type === "badge" && (
@@ -36,7 +38,7 @@ export function ActivityFeed({ items, showHeader = true }: Props) {
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-zinc-200">{item.summary}</p>
                 <p className="mt-0.5 text-xs text-zinc-500">
-                  {formatRelativeTime(item.created_at)}
+                  {formatRelativeTime(item.created_at, locale)}
                 </p>
               </div>
             </>
@@ -47,7 +49,7 @@ export function ActivityFeed({ items, showHeader = true }: Props) {
               <Link
                 key={`${item.type}-${item.id}`}
                 href={communityPath(communitySlug, `perfil/${item.userId}`)}
-                className="flex items-start gap-2 rounded-xl border border-white/5 bg-white/5 px-4 py-3 transition active:scale-[0.99] hover:bg-white/10"
+                className="app-surface-card flex items-start gap-2 px-4 py-3 transition active:scale-[0.99] hover:border-border"
               >
                 {inner}
               </Link>
@@ -57,7 +59,7 @@ export function ActivityFeed({ items, showHeader = true }: Props) {
           return (
             <div
               key={`${item.type}-${item.id}`}
-              className="flex items-start gap-2 rounded-xl border border-white/5 bg-white/5 px-4 py-3"
+              className="app-surface-card flex items-start gap-2 px-4 py-3"
             >
               {inner}
             </div>

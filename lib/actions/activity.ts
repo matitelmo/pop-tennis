@@ -2,7 +2,14 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getCommunityBySlug } from "@/lib/community/context";
+import type { CommunityLocale } from "@/lib/community/locale";
 import { BADGE_DEFINITIONS } from "@/lib/constants";
+import { BADGE_DEFINITIONS_EN } from "@/lib/i18n/badges";
+import {
+  formatActivityBadgeSummary,
+  formatActivityMatchSummary,
+} from "@/lib/i18n/format";
+import { t } from "@/lib/i18n/messages";
 import { loadParticipantNames } from "@/lib/match/participant-names";
 
 export type ActivityItem =
@@ -25,10 +32,14 @@ export type ActivityItem =
 
 export async function getActivityFeed(
   communitySlug: string,
-  limit = 20
+  limit = 20,
+  options?: { showBadges?: boolean; locale?: CommunityLocale }
 ): Promise<ActivityItem[]> {
   const community = await getCommunityBySlug(communitySlug);
   if (!community) return [];
+  const showBadges = options?.showBadges ?? community.settings.show_badges;
+  const locale = options?.locale ?? "es";
+  const badgeDefs = locale === "en" ? BADGE_DEFINITIONS_EN : BADGE_DEFINITIONS;
 
   const supabase = await createClient();
 
@@ -40,11 +51,13 @@ export async function getActivityFeed(
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  const { data: badges } = await supabase
-    .from("user_badges")
-    .select("id, badge_code, user_id, unlocked_at, profiles(full_name)")
-    .order("unlocked_at", { ascending: false })
-    .limit(limit);
+  const { data: badges } = showBadges
+    ? await supabase
+        .from("user_badges")
+        .select("id, badge_code, user_id, unlocked_at, profiles(full_name)")
+        .order("unlocked_at", { ascending: false })
+        .limit(limit)
+    : { data: [] };
 
   const allIds = new Set<string>();
   for (const m of matches ?? []) {
@@ -71,20 +84,21 @@ export async function getActivityFeed(
       id: m.id,
       matchId: m.id,
       created_at: m.created_at,
-      summary: `${winners} le ganó a ${losers} (${scores})`,
+      summary: formatActivityMatchSummary(locale, winners, losers, scores),
       deltas: m.rating_changes as Record<string, number> | null,
     };
   });
 
   const badgeItems: ActivityItem[] = (badges ?? []).map((b) => {
-    const def = BADGE_DEFINITIONS[b.badge_code as keyof typeof BADGE_DEFINITIONS];
+    const def = badgeDefs[b.badge_code as keyof typeof badgeDefs];
     const name =
-      (b.profiles as unknown as { full_name: string } | null)?.full_name ?? "Alguien";
+      (b.profiles as unknown as { full_name: string } | null)?.full_name ??
+      t(locale, "someone");
     return {
       type: "badge" as const,
       id: b.id,
       created_at: b.unlocked_at,
-      summary: `${name} desbloqueó ${def?.label ?? b.badge_code}`,
+      summary: formatActivityBadgeSummary(locale, name, def?.label ?? b.badge_code),
       emoji: def?.emoji ?? "🏅",
       userId: b.user_id,
     };

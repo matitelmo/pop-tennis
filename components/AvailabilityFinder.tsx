@@ -4,8 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { findPlayersByAvailability, type AvailabilityPlayer } from "@/lib/actions/availability";
 import { ChallengeButton } from "@/components/ChallengeButton";
+import { ScheduleChip } from "@/components/ScheduleChip";
 import { useCommunity } from "@/components/providers/CommunityProvider";
-import { getDayLabels, getBlockLabels, getSkillLabelLocalized } from "@/lib/i18n/messages";
+import { getDayLabels, getHourLabels, getSkillLabelLocalized } from "@/lib/i18n/messages";
 import { communityPath } from "@/lib/community/paths";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -24,10 +25,10 @@ export function AvailabilityFinder({
 }: Props) {
   const { locale, translate: tr } = useCommunity();
   const days = getDayLabels(locale);
-  const blocks = getBlockLabels(locale);
+  const hours = getHourLabels(locale);
 
   const [day, setDay] = useState("fri");
-  const [block, setBlock] = useState("pm");
+  const [block, setBlock] = useState("18");
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [players, setPlayers] = useState<AvailabilityPlayer[]>([]);
@@ -46,7 +47,7 @@ export function AvailabilityFinder({
         <Card className="border-warning/30 bg-warning/10 p-4">
           <p className="text-sm text-zinc-300">{tr("setYourAvailability")}</p>
           <Link href={communityPath(communitySlug, "perfil")} className="mt-3 block">
-            <Button size="sm" className="w-full">
+            <Button size="md" className="w-full">
               {tr("navProfile")}
             </Button>
           </Link>
@@ -57,48 +58,35 @@ export function AvailabilityFinder({
         <p className="text-sm font-bold text-zinc-400">{tr("selectDay")}</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {days.map((d) => (
-            <button
+            <ScheduleChip
               key={d.key}
-              type="button"
+              label={d.label}
+              active={day === d.key}
               onClick={() => {
                 setDay(d.key);
                 setSearched(false);
               }}
-              className={cn(
-                "rounded-full px-3 py-1.5 text-xs font-bold",
-                day === d.key
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-surface-glass text-zinc-400"
-              )}
-            >
-              {d.label}
-            </button>
+              className={cn("min-w-[44px] rounded-full px-3")}
+            />
           ))}
         </div>
 
         <p className="mt-4 text-sm font-bold text-zinc-400">{tr("selectTime")}</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {blocks.map((b) => (
-            <button
-              key={b.key}
-              type="button"
+        <div className="mt-2 grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+          {hours.map((h) => (
+            <ScheduleChip
+              key={h.key}
+              label={h.label}
+              active={block === h.key}
               onClick={() => {
-                setBlock(b.key);
+                setBlock(h.key);
                 setSearched(false);
               }}
-              className={cn(
-                "rounded-full px-3 py-1.5 text-xs font-bold",
-                block === b.key
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-surface-glass text-zinc-400"
-              )}
-            >
-              {b.label}
-            </button>
+            />
           ))}
         </div>
 
-        <Button type="button" className="mt-4 w-full" disabled={loading} onClick={search}>
+        <Button type="button" className="mt-4 w-full" size="md" disabled={loading} onClick={search}>
           {loading ? tr("sending") : tr("searchPlayers")}
         </Button>
       </Card>
@@ -137,7 +125,7 @@ export function AvailabilityFinder({
                   <ChallengeButton
                     opponentId={p.id}
                     opponentName={p.full_name}
-                    size="sm"
+                    size="md"
                     communitySlug={communitySlug}
                   />
                 )}

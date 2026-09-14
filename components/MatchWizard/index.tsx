@@ -18,8 +18,7 @@ import { validateMatchScores } from "@/lib/match/set-scores";
 import { formatTeamName } from "@/lib/match/score-display";
 import type { MatchFormat, Profile, SetScore } from "@/types/database";
 import type { MatchPointSummary } from "@/lib/match-labels";
-
-const STEP_LABELS = ["Formato", "Jugadores", "Score"];
+import { useCommunity } from "@/components/providers/CommunityProvider";
 
 type Props = {
   currentUserId: string;
@@ -42,6 +41,8 @@ type RevealState = {
 };
 
 export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Props) {
+  const { translate: tr } = useCommunity();
+  const stepLabels = [tr("mwStepFormat"), tr("mwStepPlayers"), tr("mwStepScore")];
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<"1v1" | "2v2">("1v1");
   const [bestOf, setBestOf] = useState<1 | 3 | 5>(3);
@@ -77,7 +78,7 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
   const loadPreview = useCallback(async () => {
     if (!canProceedStep2 || scoreValidationError) {
       setPreview(null);
-      setPreviewError(scoreValidationError ?? "Completá el score para ver el impacto en puntos");
+      setPreviewError(scoreValidationError ?? tr("mwCompleteScorePreview"));
       return;
     }
     const result = await previewMatchDelta({
@@ -109,7 +110,7 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
     } else {
       setPreview(null);
       setPreviewError(
-        result.error ?? "Completá el score para ver el impacto en puntos"
+        result.error ?? tr("mwCompleteScorePreview")
       );
     }
   }, [
@@ -122,6 +123,7 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
     setScores,
     profiles,
     communitySlug,
+    tr,
   ]);
 
   useEffect(() => {
@@ -196,7 +198,7 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
     setLoading(false);
 
     if (!result.success || !result.deltas) {
-      setError(result.error ?? "Error desconocido");
+      setError(result.error ?? tr("mwUnknownError"));
       return;
     }
 
@@ -227,12 +229,12 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
         )}
       >
         <div className="space-y-6">
-          <StepIndicator steps={STEP_LABELS} current={step} />
+          <StepIndicator steps={stepLabels} current={step} />
 
           {step === 1 && (
         <div className="space-y-6">
           <div>
-            <p className="mb-3 text-sm font-medium text-zinc-400">Modo</p>
+            <p className="mb-3 text-sm font-medium text-zinc-400">{tr("mwMode")}</p>
             <div className="grid grid-cols-2 gap-3">
               {(["1v1", "2v2"] as const).map((m) => (
                 <button
@@ -245,13 +247,13 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
                       : "border-border bg-surface-glass text-zinc-300"
                   }`}
                 >
-                  {m === "1v1" ? "Singles" : "Dobles"}
+                  {m === "1v1" ? tr("mwSingles") : tr("mwDoubles")}
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <p className="mb-3 text-sm font-medium text-zinc-400">Formato</p>
+            <p className="mb-3 text-sm font-medium text-zinc-400">{tr("mwFormat")}</p>
             <div className="grid grid-cols-3 gap-2">
               {allowedBestOf.map((bo) => (
                 <button
@@ -270,7 +272,7 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
             </div>
           </div>
           <Button type="button" onClick={() => setStep(2)} className="w-full" size="lg">
-            Siguiente <ChevronRight className="h-5 w-5" />
+            {tr("mwNext")} <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
       )}
@@ -278,10 +280,11 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
       {step === 2 && (
         <div className="space-y-6">
           <p className="rounded-xl bg-surface-glass px-4 py-3 text-sm text-zinc-400">
-            Elegí los jugadores de cada equipo. Podés cargar partidos aunque no hayas jugado vos.
+            {tr("mwPickPlayersHint")}
           </p>
           <PlayerPicker
-            title="Equipo 1"
+            title={tr("mwTeam1")}
+            searchPlaceholder={tr("mwSearchPlayer")}
             profiles={profiles}
             selected={team1Ids}
             disabled={team2Ids}
@@ -289,7 +292,8 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
             highlight={winningTeam === 1}
           />
           <PlayerPicker
-            title="Equipo 2"
+            title={tr("mwTeam2")}
+            searchPlaceholder={tr("mwSearchPlayer")}
             profiles={profiles}
             selected={team2Ids}
             disabled={team1Ids}
@@ -297,7 +301,7 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
             highlight={winningTeam === 2}
           />
           <div>
-            <p className="mb-3 text-sm font-medium text-zinc-400">¿Quién ganó?</p>
+            <p className="mb-3 text-sm font-medium text-zinc-400">{tr("mwWhoWon")}</p>
             <div className="grid grid-cols-2 gap-3">
               {([1, 2] as const).map((t) => (
                 <button
@@ -310,22 +314,23 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
                       : "border-border text-zinc-400"
                   }`}
                 >
-                  Equipo {t}
+                  {t === 1 ? tr("mwTeam1") : tr("mwTeam2")}
                 </button>
               ))}
             </div>
           </div>
           {!canProceedStep2 && (
             <p className="text-center text-xs text-amber-400">
-              Elegí {teamSize} jugador{teamSize > 1 ? "es" : ""} por equipo para continuar
+              {tr("mwPickPrefix")} {teamSize}{" "}
+              {teamSize > 1 ? tr("mwPickPlayers") : tr("mwPickPlayer")} {tr("mwPickPerTeam")}
             </p>
           )}
           <div className="flex gap-3">
             <Button type="button" variant="secondary" onClick={() => setStep(1)} className="flex-1" size="lg">
-              <ChevronLeft className="h-5 w-5" /> Atrás
+              <ChevronLeft className="h-5 w-5" /> {tr("mwBack")}
             </Button>
             <Button type="button" onClick={() => setStep(3)} disabled={!canProceedStep2} className="flex-1" size="lg">
-              Siguiente <ChevronRight className="h-5 w-5" />
+              {tr("mwNext")} <ChevronRight className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -334,9 +339,9 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
       {step === 3 && (
         <div className="space-y-4">
           <p className="text-body">
-            Cargá el score set por set. La columna izquierda es{" "}
-            <strong className="text-white">{team1Label || "Equipo 1"}</strong> y la derecha{" "}
-            <strong className="text-white">{team2Label || "Equipo 2"}</strong>.
+            {tr("mwScoreHint")
+              .replace("{team1}", team1Label || tr("mwTeam1"))
+              .replace("{team2}", team2Label || tr("mwTeam2"))}
           </p>
           <SetScoresEditor
             setScores={setScores}
@@ -347,10 +352,7 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
           />
 
           <div className="lg:hidden">
-            <MatchPreviewPanel
-              preview={preview}
-              previewError={previewError}
-            />
+            <MatchPreviewPanel preview={preview} previewError={previewError} tr={tr} />
           </div>
 
           {error && (
@@ -358,10 +360,10 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
           )}
           <div className="flex gap-3 pb-4">
             <Button type="button" variant="secondary" onClick={() => setStep(2)} className="flex-1" size="lg">
-              <ChevronLeft className="h-5 w-5" /> Atrás
+              <ChevronLeft className="h-5 w-5" /> {tr("mwBack")}
             </Button>
             <Button type="button" onClick={handleSubmit} disabled={loading || !preview} className="flex-1" size="lg">
-              {loading ? "Guardando..." : "Guardar Partido"}
+              {loading ? tr("mwSaving") : tr("mwSaveMatch")}
             </Button>
           </div>
         </div>
@@ -370,7 +372,7 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
 
         {step === 3 && (
           <div className="hidden lg:sticky lg:top-6 lg:block">
-            <MatchPreviewPanel preview={preview} previewError={previewError} />
+            <MatchPreviewPanel preview={preview} previewError={previewError} tr={tr} />
           </div>
         )}
       </div>
@@ -392,14 +394,16 @@ export function MatchWizard({ currentUserId, communitySlug, allowedFormats }: Pr
 function MatchPreviewPanel({
   preview,
   previewError,
+  tr,
 }: {
   preview: RevealState | null;
   previewError: string | null;
+  tr: (key: import("@/lib/i18n/messages").MessageKey) => string;
 }) {
   if (preview) {
     return (
       <Card className="border-accent/20 bg-surface-elevated">
-        <p className="text-xs font-bold uppercase text-accent">Así moverían los puntos</p>
+        <p className="text-xs font-bold uppercase text-accent">{tr("mwPreviewTitle")}</p>
         <div className="mt-2 space-y-1">
           {Object.entries(preview.deltas).map(([id, delta]) => (
             <div key={id} className="flex justify-between text-sm">
@@ -424,15 +428,14 @@ function MatchPreviewPanel({
 
   return (
     <Card className="border-border-subtle bg-surface-glass">
-      <p className="text-sm text-zinc-400">
-        Completá el score para ver cómo impacta en el ranking.
-      </p>
+      <p className="text-sm text-zinc-400">{tr("mwPreviewPlaceholder")}</p>
     </Card>
   );
 }
 
 function PlayerPicker({
   title,
+  searchPlaceholder,
   profiles,
   selected,
   disabled,
@@ -440,6 +443,7 @@ function PlayerPicker({
   highlight,
 }: {
   title: string;
+  searchPlaceholder: string;
   profiles: Profile[];
   selected: string[];
   disabled: string[];
@@ -465,7 +469,7 @@ function PlayerPicker({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar jugador..."
+          placeholder={searchPlaceholder}
           className="mb-3 w-full min-h-[44px] rounded-xl border border-border bg-surface-glass px-4 text-sm text-white outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
         />
       )}

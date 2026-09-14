@@ -12,7 +12,7 @@ type Props = {
 };
 
 export function PendingChallengesBanner({ challenges, communitySlug }: Props) {
-  const { locale } = useCommunity();
+  const { translate: tr } = useCommunity();
 
   if (!challenges.length) return null;
 
@@ -21,21 +21,13 @@ export function PendingChallengesBanner({ challenges, communitySlug }: Props) {
       {challenges.map((c) => (
         <Card key={c.id} className="border-accent/30 bg-accent-muted/20 p-4">
           <p className="text-sm text-white">
-            {locale === "en" ? (
-              <>
-                <strong>{c.fromName}</strong> wants to play you — reach out to schedule a match!
-              </>
-            ) : (
-              <>
-                <strong>{c.fromName}</strong> te desafió — contactalo para armar el partido.
-              </>
-            )}
+            <strong>{c.fromName}</strong> {tr("wantsToPlayYou")}
           </p>
           <Link
             href={communityPath(communitySlug, `perfil/${c.fromUserId}`)}
             className="mt-2 inline-block text-xs font-bold text-accent hover:underline"
           >
-            {locale === "en" ? "View profile" : "Ver perfil"}
+            {tr("viewProfile")}
           </Link>
         </Card>
       ))}

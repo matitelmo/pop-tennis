@@ -6,9 +6,11 @@ import { MatchPointContext } from "@/components/MatchPointContext";
 import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { TercerTiempoModal } from "@/components/InAppNotifications";
 import { useOptionalCommunity } from "@/components/providers/CommunityProvider";
+import { t, type MessageKey } from "@/lib/i18n/messages";
 import { Button } from "@/components/ui/Button";
 import { buildMatchShareText, shareViaWhatsApp } from "@/lib/share";
-import { getMatchLabel, type MatchPointSummary } from "@/lib/match-labels";
+import { getMatchLabelLocalized } from "@/lib/i18n/match-copy";
+import type { MatchPointSummary } from "@/lib/match-labels";
 import { cn } from "@/lib/utils";
 import type { SetScore } from "@/types/database";
 
@@ -85,7 +87,9 @@ export function PointsReveal({
   showCelebration = true,
 }: Props) {
   const community = useOptionalCommunity();
-  const enableCelebration = showCelebration && community?.locale !== "en";
+  const locale = community?.locale ?? "es";
+  const tr = community?.translate ?? ((key: MessageKey) => t(locale, key));
+  const enableCelebration = showCelebration && locale !== "en";
   const [visible, setVisible] = useState(false);
   const [showTercerTiempo, setShowTercerTiempo] = useState(false);
 
@@ -135,16 +139,15 @@ export function PointsReveal({
           onClick={(e) => e.stopPropagation()}
         >
           <h2 className="mb-2 text-center text-2xl font-black text-accent">
-            {pending ? "Resultado enviado" : "¡Partido confirmado!"}
+            {pending ? tr("prResultSent") : tr("prMatchConfirmed")}
           </h2>
           <p className="mb-4 text-center text-body">
-            {pending
-              ? "Esperando confirmación del rival. Si no responde en 24h, se confirma solo."
-              : "Los puntos ya están en el ranking."}
+            {pending ? tr("prWaitingConfirm") : tr("prPointsInRanking")}
           </p>
-          {summary?.tags.includes("Partido de la Semana") && (
+          {(summary?.tags.includes("Partido de la Semana") ||
+            summary?.tags.includes("Match of the Week")) && (
             <p className="mb-3 text-center text-xs font-bold text-accent">
-              Bonus Partido de la Semana ×1.25
+              {tr("prWeeklyBonus")}
             </p>
           )}
           {setScores && team1Ids && team2Ids ? (
@@ -165,7 +168,7 @@ export function PointsReveal({
           <div className="space-y-3">
             {Object.entries(deltas).map(([id, delta]) => {
               const isWinner = winnerIds.includes(id);
-              const label = getMatchLabel(delta, isWinner);
+              const label = getMatchLabelLocalized(delta, isWinner, locale);
               return (
                 <div key={id} className="rounded-xl bg-surface-glass px-4 py-3">
                   <div className="flex items-center justify-between">
@@ -179,14 +182,14 @@ export function PointsReveal({
           </div>
           {summary && <MatchPointContext summary={summary} />}
           <Link href="/reglas#calculo" className="mt-4 block text-center text-caption underline">
-            Más sobre el ranking
+            {tr("prMoreRanking")}
           </Link>
           <div className="mt-4 flex gap-2">
             <Button variant="secondary" onClick={handleShare} className="flex-1">
-              Compartir WhatsApp
+              {tr("prShareWhatsApp")}
             </Button>
             <Button onClick={onClose} className="flex-1">
-              Listo
+              {tr("prDone")}
             </Button>
           </div>
         </div>

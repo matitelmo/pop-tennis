@@ -11,20 +11,20 @@ import {
   getPartidoNav,
 } from "@/lib/navigation/community-nav";
 import { CommunitySwitcher } from "@/components/layout/CommunitySwitcher";
-import type { CommunityLocale } from "@/lib/community/locale";
+import { LocaleToggle } from "@/components/LocaleToggle";
+import { useCommunity } from "@/components/providers/CommunityProvider";
 import { t } from "@/lib/i18n/messages";
 
 type Props = {
   communitySlug: string;
   communityName: string;
   communities: { slug: string; name: string }[];
-  locale: CommunityLocale;
   showFindPlayers: boolean;
   pendingCount?: number;
   isAdmin?: boolean;
 };
 
-function splitNavItems(locale: CommunityLocale, showFindPlayers: boolean) {
+function splitNavItems(locale: "en" | "es", showFindPlayers: boolean) {
   const items = getCommunityNavItems(locale, { showFindPlayers });
   const rulesIdx = items.findIndex((i) => i.segment === "reglas");
   return {
@@ -37,19 +37,19 @@ export function SideNav({
   communitySlug,
   communityName,
   communities,
-  locale,
   showFindPlayers,
   pendingCount = 0,
   isAdmin = false,
 }: Props) {
   const pathname = usePathname();
+  const { locale } = useCommunity();
   const partidoHref = getPartidoHref(communitySlug);
   const partidoNav = getPartidoNav(locale);
   const { beforePartido, afterPartido } = splitNavItems(locale, showFindPlayers);
 
   return (
     <aside
-      className="hidden lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:border-r lg:border-border-subtle lg:bg-surface-nav lg:pb-6"
+      className="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-56 lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:border-r lg:border-border-subtle lg:bg-surface-nav lg:pb-6"
       aria-label={locale === "en" ? "Side navigation" : "Navegación lateral"}
     >
       <div className="border-b border-border-subtle py-4">
@@ -98,7 +98,8 @@ export function SideNav({
         ))}
       </nav>
 
-      <div className="mt-auto space-y-1 border-t border-border-subtle px-3 pt-4">
+      <div className="mt-auto space-y-3 border-t border-border-subtle px-3 pt-4">
+        <LocaleToggle />
         <Link
           href="/communities"
           className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-zinc-400 transition hover:bg-white/5 hover:text-white"

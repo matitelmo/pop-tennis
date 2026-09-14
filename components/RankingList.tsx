@@ -8,7 +8,7 @@ import { SegmentTabs } from "@/components/ui/SegmentTabs";
 import { Button } from "@/components/ui/Button";
 import type { LeaderboardEntry } from "@/lib/actions/ranking";
 import type { LeaderboardView } from "@/types/database";
-import { useCommunitySlug } from "@/hooks/useCommunitySlug";
+import { useCommunity } from "@/components/providers/CommunityProvider";
 import { communityPath } from "@/lib/community/paths";
 
 type Props = {
@@ -19,14 +19,13 @@ type Props = {
 
 type Mode = "historical" | "monthly" | "activity";
 
-const MODE_TABS = [
-  { id: "historical", label: "Pts" },
-  { id: "monthly", label: "Mes" },
-  { id: "activity", label: "Partidos" },
-];
-
 export function RankingList({ entries, currentUserId, view = "alltime" }: Props) {
-  const communitySlug = useCommunitySlug();
+  const { slug: communitySlug, translate: tr } = useCommunity();
+  const modeTabs = [
+    { id: "historical", label: tr("pts") },
+    { id: "monthly", label: tr("month") },
+    { id: "activity", label: tr("matches") },
+  ];
   const [mode, setMode] = useState<Mode>("historical");
 
   const sorted = [...entries].sort((a, b) => {
@@ -47,7 +46,7 @@ export function RankingList({ entries, currentUserId, view = "alltime" }: Props)
     <>
       {!showQuarterly && (
         <SegmentTabs
-          tabs={MODE_TABS}
+          tabs={modeTabs}
           activeId={mode}
           onChange={(id) => setMode(id as Mode)}
           className="mb-4"
@@ -59,10 +58,10 @@ export function RankingList({ entries, currentUserId, view = "alltime" }: Props)
       <div className="space-y-2">
         {sorted.length === 0 && (
           <div className="py-8 text-center">
-            <p className="text-caption">Todavía no hay jugadores en este ranking</p>
+            <p className="text-caption">{tr("noRankingPlayers")}</p>
             {currentUserId && (
               <Link href={communityPath(communitySlug, "partido")} className="mt-3 inline-block">
-                <Button size="sm">Sé el primero en cargar un partido</Button>
+                <Button size="sm">{tr("beFirstMatch")}</Button>
               </Link>
             )}
           </div>

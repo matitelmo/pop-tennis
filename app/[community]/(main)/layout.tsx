@@ -33,10 +33,12 @@ export default async function MainLayout({
     pendingCount = pending.filter(
       (m) => m.role === "needs_confirm" || m.role === "needs_accept_counter"
     ).length;
-    await checkGhostBadgeForUser(profile.id);
+    if (community.settings.show_badges) {
+      await checkGhostBadgeForUser(profile.id);
+    }
   }
 
-  const locale = getCommunityLocale(communitySlug);
+  const defaultLocale = getCommunityLocale(communitySlug);
   const showFindPlayers = community.settings.player_finder;
 
   return (
@@ -45,8 +47,9 @@ export default async function MainLayout({
         communitySlug={communitySlug}
         communityName={community.name}
         communities={communities.map((c) => ({ slug: c.slug, name: c.name }))}
-        locale={locale}
+        defaultLocale={defaultLocale}
         showFindPlayers={showFindPlayers}
+        showBadges={community.settings.show_badges}
         pendingCount={pendingCount}
         isAdmin={isAdmin}
       >

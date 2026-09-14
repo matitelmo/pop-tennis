@@ -18,7 +18,7 @@ import { rosterToPickableProfile } from "@/lib/community/roster-as-players";
 import { revalidateCommunityPaths } from "@/lib/community/paths";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { hasActiveSubscription } from "@/lib/subscription";
+import { hasActiveSubscription, isSubscriptionRequired } from "@/lib/subscription";
 import { allowsFormat } from "@/lib/community/settings";
 import {
   sendDisputeToAdmin,
@@ -246,7 +246,7 @@ export async function submitMatch(input: SubmitMatchInput): Promise<SubmitMatchR
   const member = await getCommunityMember(community.id, user.id);
   if (!member) return { success: false, error: "No sos miembro de esta comunidad" };
 
-  if (community.settings.requires_subscription && !hasActiveSubscription(member)) {
+  if (isSubscriptionRequired(community.settings) && !hasActiveSubscription(member)) {
     return {
       success: false,
       error: "Necesitás una suscripción activa para cargar partidos",

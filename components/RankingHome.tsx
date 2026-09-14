@@ -21,6 +21,7 @@ import type { IncomingChallenge } from "@/lib/actions/challenges-inbox";
 import type { WeeklyMatchAssignment } from "@/lib/actions/weekly-match";
 import type { CommunitySettings } from "@/lib/community/settings";
 import { communityPath } from "@/lib/community/paths";
+import { SUBSCRIPTION_GATES_ENABLED, isSubscriptionRequired } from "@/lib/subscription";
 
 type Props = {
   communitySlug: string;
@@ -47,15 +48,6 @@ type Props = {
   isLoggedIn: boolean;
 };
 
-const GENDER_TABS = [
-  { id: "male", label: "Hombres" },
-  { id: "female", label: "Mujeres" },
-];
-
-const VIEW_TABS = [
-  { id: "alltime", label: "Histórico" },
-  { id: "quarterly", label: "Trimestre" },
-];
 
 export function RankingHome({
   communitySlug,
@@ -75,7 +67,15 @@ export function RankingHome({
   incomingChallenges = [],
   isLoggedIn,
 }: Props) {
-  const { translate: tr, showFindPlayers } = useCommunity();
+  const { translate: tr, showFindPlayers, locale } = useCommunity();
+  const genderTabs = [
+    { id: "male", label: tr("genderMale") },
+    { id: "female", label: tr("genderFemale") },
+  ];
+  const viewTabs = [
+    { id: "alltime", label: locale === "en" ? "All-time" : "Histórico" },
+    { id: "quarterly", label: locale === "en" ? "Quarter" : "Trimestre" },
+  ];
   const showGenderSplit = settings.leaderboard_gender_split;
   const showQuarterly = settings.leaderboard_quarterly_view;
   const [gender, setGender] = useState<"male" | "female">("male");
@@ -104,23 +104,24 @@ export function RankingHome({
       {!isLoggedIn && (
         <Card className="border-accent/30 bg-accent-muted/20 p-4">
           <p className="text-sm font-bold text-white">{communityName}</p>
-          <p className="mt-1 text-caption">Registrate gratis para unirte.</p>
+          <p className="mt-1 text-caption">{tr("registerFree")}</p>
           <Link href={`/register?community=${communitySlug}`} className="mt-3 block">
             <Button className="w-full" size="sm">
-              Crear cuenta
+              {tr("createAccount")}
             </Button>
           </Link>
         </Card>
       )}
 
-      {isLoggedIn && settings.requires_subscription && !canUsePaidFeatures && (
+      {isLoggedIn &&
+        SUBSCRIPTION_GATES_ENABLED &&
+        isSubscriptionRequired(settings) &&
+        !canUsePaidFeatures && (
         <Card className="border-accent/30 p-4">
-          <p className="text-sm text-zinc-300">
-            Suscribite para cargar partidos y desafiar rivales.
-          </p>
+          <p className="text-sm text-zinc-300">{tr("subscribeBanner")}</p>
           <Link href={communityPath(communitySlug, "subscribe")} className="mt-3 block">
             <Button className="w-full" size="sm">
-              Ver planes — $10/mo
+              {tr("seePlans")}
             </Button>
           </Link>
         </Card>
@@ -136,17 +137,17 @@ export function RankingHome({
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
-        <div className="order-2 space-y-6 lg:order-1">
+        <div className="order-1 space-y-6 lg:order-1">
           {showGenderSplit && (
             <SegmentTabs
-              tabs={GENDER_TABS}
+              tabs={genderTabs}
               activeId={gender}
               onChange={(id) => setGender(id as "male" | "female")}
             />
           )}
           {showQuarterly && (
             <SegmentTabs
-              tabs={VIEW_TABS}
+              tabs={viewTabs}
               activeId={view}
               onChange={(id) => setView(id as "alltime" | "quarterly")}
             />
@@ -205,7 +206,7 @@ export function RankingHome({
           )}
         </div>
 
-        <div className="order-1 lg:order-2 lg:sticky lg:top-6">
+        <div className="order-2 lg:order-2 lg:sticky lg:top-6">
           <RankingSidebar {...sidebarProps} />
         </div>
       </div>

@@ -26,6 +26,7 @@ export default async function ReglasPage({ params }: Props) {
             ? "Everything you need to understand the ranking"
             : "Todo lo que necesitás saber para entender el ranking"
         }
+        sticky
       />
       {isEn ? (
         <RulesGuideEn showBadges={community.settings.show_badges} />

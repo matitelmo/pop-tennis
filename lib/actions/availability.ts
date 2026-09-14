@@ -103,8 +103,8 @@ export async function findPlayersByAvailability(
   // Finder is open to all members; challenging may still require subscription on paid leagues.
 
   const validDays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
-  const validBlocks = ["am", "pm", "eve"];
-  if (!validDays.includes(day) || !validBlocks.includes(block)) {
+  const validHours = Array.from({ length: 14 }, (_, i) => String(i + 7));
+  if (!validDays.includes(day) || !validHours.includes(block)) {
     return { players: [], error: "Invalid filter" };
   }
 

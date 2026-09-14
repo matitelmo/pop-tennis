@@ -12,7 +12,7 @@ import { getInAppNotifications } from "@/lib/notifications/in-app";
 import { t } from "@/lib/i18n/messages";
 import { getPlayersWithSimilarAvailability } from "@/lib/actions/availability";
 import { getIncomingChallenges } from "@/lib/actions/challenges-inbox";
-import { hasActiveSubscription } from "@/lib/subscription";
+import { canUseCommunityFeatures } from "@/lib/subscription";
 import { AppHeader } from "@/components/AppHeader";
 import { RankingHome } from "@/components/RankingHome";
 import { PageSkeleton } from "@/components/PageSkeleton";
@@ -59,14 +59,12 @@ async function RankingContent({ communitySlug }: { communitySlug: string }) {
   }
 
   const member = await getCommunityMember(community.id, profile.id);
-  const canUsePaidFeatures =
-    !community.settings.requires_subscription ||
-    (member ? hasActiveSubscription(member) : false);
+  const canUsePaidFeatures = canUseCommunityFeatures(community.settings, member);
 
   const [weekly, activity, pending, profiles, weeklyMatch, similarPlayers, incomingChallenges] =
     await Promise.all([
       getWeeklyStats(communitySlug),
-      getActivityFeed(communitySlug),
+      getActivityFeed(communitySlug, 20, { locale }),
       getPendingMatchesForUser(community.id, profile.id),
       getCommunityProfiles(community.id),
       canUsePaidFeatures && member?.weekly_opt_in

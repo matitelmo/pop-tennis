@@ -8,7 +8,7 @@ import { getCommunityBySlug, getCommunityMember } from "@/lib/community/context"
 import { getCommunityLocale } from "@/lib/community/locale";
 import { communityPath } from "@/lib/community/paths";
 import { t } from "@/lib/i18n/messages";
-import { hasActiveSubscription } from "@/lib/subscription";
+import { canUseCommunityFeatures } from "@/lib/subscription";
 import type { Availability } from "@/types/database";
 
 type Props = {
@@ -31,8 +31,7 @@ export default async function FindPlayersPage({ params }: Props) {
   const member = await getCommunityMember(community.id, profile.id);
   if (!member) redirect("/communities");
 
-  const canChallenge =
-    !community.settings.requires_subscription || hasActiveSubscription(member);
+  const canChallenge = canUseCommunityFeatures(community.settings, member);
 
   const [incomingChallenges] = await Promise.all([getIncomingChallenges(communitySlug)]);
 

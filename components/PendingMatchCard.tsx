@@ -15,6 +15,7 @@ import { MatchScoreBoard } from "@/components/MatchScoreBoard";
 import { PointsReveal } from "@/components/PointsReveal";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { useCommunity } from "@/components/providers/CommunityProvider";
 import { formatFormat } from "@/lib/utils";
 import { CONFIRMATION_HOURS } from "@/lib/constants";
 import { formatTeamName } from "@/lib/match/score-display";
@@ -31,6 +32,7 @@ type Props = {
 
 export function PendingMatchCard({ match, profileNames, currentUserId, onDone }: Props) {
   const communitySlug = useCommunitySlug();
+  const { locale, translate: tr } = useCommunity();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [disputing, setDisputing] = useState(false);
@@ -74,7 +76,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
     setError(null);
     const res = await confirmMatch(communitySlug, match.id);
     setLoading(false);
-    if (!res.success) setError(res.error ?? "Error");
+    if (!res.success) setError(res.error ?? tr("pmGenericError"));
     else if (res.reveal) setReveal(res.reveal);
     else onDone();
   }
@@ -84,7 +86,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
     setError(null);
     const res = await acceptCounterMatch(communitySlug, match.id);
     setLoading(false);
-    if (!res.success) setError(res.error ?? "Error");
+    if (!res.success) setError(res.error ?? tr("pmGenericError"));
     else if (res.reveal) setReveal(res.reveal);
     else onDone();
   }
@@ -94,7 +96,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
     setError(null);
     const res = await disputeMatch(communitySlug, match.id);
     setLoading(false);
-    if (!res.success) setError(res.error ?? "Error");
+    if (!res.success) setError(res.error ?? tr("pmGenericError"));
     else onDone();
   }
 
@@ -111,7 +113,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
       winningTeam: counterWinner,
     });
     setLoading(false);
-    if (!res.success) setError(res.error ?? "Error");
+    if (!res.success) setError(res.error ?? tr("pmGenericError"));
     else onDone();
   }
 
@@ -120,11 +122,11 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
       <Card className="border-warning/30 bg-warning/5">
         <p className="text-xs font-bold uppercase text-warning">
           {match.status === "counter_proposed"
-            ? "Contrapropuesta pendiente"
-            : "Confirmar resultado"}
+            ? tr("pmCounterPending")
+            : tr("pmConfirmResult")}
         </p>
         <p className="mt-1 text-caption">
-          Resultado propuesto · {formatFormat(match.format)}
+          {tr("pmProposedResult")} · {formatFormat(match.format, locale)}
         </p>
         <div className="mt-3">
           <MatchScoreBoard
@@ -138,7 +140,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
         </div>
         {!viewerOnTeam1 && !viewerOnTeam2 && (
           <p className="mt-2 text-caption">
-            {winnerNames} le ganó a {loserNames}
+            {winnerNames} {tr("pmBeat")} {loserNames}
           </p>
         )}
 
@@ -150,8 +152,8 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
             />
           </div>
           <p className={`mt-1 text-caption ${urgent ? "font-bold text-danger" : ""}`}>
-            Cargado por {match.submitter_name} ·{" "}
-            {hoursLeft === 0 ? "Vence pronto" : `Quedan ${hoursLeft}h`}
+            {tr("pmSubmittedBy")} {match.submitter_name} ·{" "}
+            {hoursLeft === 0 ? tr("pmExpiresSoon") : tr("pmHoursLeft").replace("{h}", String(hoursLeft))}
           </p>
         </div>
 
@@ -167,7 +169,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
                 className="flex-1"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                Confirmar
+                {tr("pmConfirm")}
               </Button>
               <Button
                 type="button"
@@ -176,7 +178,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
                 disabled={loading}
                 className="flex-1"
               >
-                <X className="h-4 w-4" /> Otro resultado
+                <X className="h-4 w-4" /> {tr("pmOtherResult")}
               </Button>
             </div>
             <Button
@@ -186,7 +188,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
               disabled={loading}
               className="w-full text-danger"
             >
-              Enviar disputa al admin
+              {tr("pmSendDispute")}
             </Button>
           </div>
         )}
@@ -199,13 +201,13 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
             className="mt-4 w-full"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Aceptar contrapropuesta
+            {tr("pmAcceptCounter")}
           </Button>
         )}
 
         {disputing && (
           <div className="mt-4 space-y-3">
-            <p className="text-body">Proponé el resultado correcto:</p>
+            <p className="text-body">{tr("pmProposeCorrect")}</p>
             <div className="grid grid-cols-2 gap-2">
               {([1, 2] as const).map((t) => (
                 <button
@@ -218,7 +220,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
                       : "border-border text-zinc-400"
                   }`}
                 >
-                  Ganó {t === 1 ? team1Label : team2Label}
+                  {tr("pmTeamWon")} {t === 1 ? team1Label : team2Label}
                 </button>
               ))}
             </div>
@@ -234,7 +236,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
             )}
             <div className="flex gap-2">
               <Button type="button" variant="secondary" onClick={() => setDisputing(false)} className="flex-1">
-                Cancelar
+                {tr("pmCancel")}
               </Button>
               <Button
                 type="button"
@@ -243,7 +245,7 @@ export function PendingMatchCard({ match, profileNames, currentUserId, onDone }:
                 className="flex-1 bg-warning text-accent-foreground hover:bg-warning/90"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Enviar
+                {tr("pmSend")}
               </Button>
             </div>
           </div>

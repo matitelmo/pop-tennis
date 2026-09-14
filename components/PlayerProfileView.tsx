@@ -29,6 +29,7 @@ type Props = {
   showPlayerSearch?: boolean;
   showBadges?: boolean;
   communitySlug: string;
+  locale?: import("@/lib/community/locale").CommunityLocale;
 };
 
 export function PlayerProfileView({
@@ -43,6 +44,7 @@ export function PlayerProfileView({
   showPlayerSearch = false,
   showBadges = true,
   communitySlug,
+  locale = "es",
 }: Props) {
   const isOwnProfile = !player.isUnclaimed && player.id === currentUserId;
 
@@ -93,6 +95,7 @@ export function PlayerProfileView({
             userId={player.id}
             possessive={isOwnProfile ? "tuyo" : "ajeno"}
             communitySlug={communitySlug}
+            locale={locale}
           />
 
           {!player.isUnclaimed && !isOwnProfile && (

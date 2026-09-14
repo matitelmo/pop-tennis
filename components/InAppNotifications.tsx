@@ -35,7 +35,8 @@ type Props = {
 
 export function InAppNotifications({ notifications }: Props) {
   const community = useOptionalCommunity();
-  const locale = community?.locale ?? "es";
+  const tr = community?.translate ?? ((key: "understood" | "moreNotifications") =>
+    key === "understood" ? "Entendido" : "más");
   const [visible, setVisible] = useState<InAppNotification[]>([]);
   const [enabled, setEnabled] = useState(false);
 
@@ -70,11 +71,13 @@ export function InAppNotifications({ notifications }: Props) {
           onClick={handleDismiss}
           className="mt-3 min-h-[40px] w-full rounded-xl bg-surface-glass text-sm font-bold text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-          {locale === "en" ? "Got it" : "Entendido"}
+          {tr("understood")}
         </button>
       </div>
       {visible.length > 1 && (
-        <p className="mt-2 text-center text-caption">+{visible.length - 1} más</p>
+        <p className="mt-2 text-center text-caption">
+          +{visible.length - 1} {tr("moreNotifications")}
+        </p>
       )}
     </div>
   );

@@ -40,6 +40,7 @@ type Props = {
 export function BadgeGrid({ unlockedCodes }: Props) {
   const [selected, setSelected] = useState<BadgeView | null>(null);
   const community = useOptionalCommunity();
+  if (community && !community.showBadges) return null;
   const badgeSource =
     community?.locale === "en" ? BADGE_DEFINITIONS_EN : BADGE_DEFINITIONS;
   const codes = Object.keys(badgeSource) as BadgeCode[];
@@ -80,10 +81,9 @@ export function BadgeGrid({ unlockedCodes }: Props) {
             type="button"
             onClick={() => setSelected(badge)}
             className={cn(
-              "relative rounded-2xl border p-4 text-center transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-              badge.unlocked
-                ? "border-accent/30 bg-accent-muted"
-                : "border-border-subtle bg-surface-glass opacity-50"
+              "app-surface-card relative p-4 text-center transition active:scale-[0.98] hover:border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+              badge.unlocked && "border-accent/30 bg-accent-muted",
+              !badge.unlocked && "opacity-50"
             )}
           >
             {!badge.unlocked && (
@@ -129,7 +129,7 @@ export function BadgeGrid({ unlockedCodes }: Props) {
               className="mt-6 w-full"
               onClick={() => setSelected(null)}
             >
-              {community?.locale === "en" ? "Close" : "Cerrar"}
+              {community?.translate("closeModal") ?? "Close"}
             </Button>
           </Card>
         </div>

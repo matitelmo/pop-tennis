@@ -1,3 +1,7 @@
+"use client";
+
+import { useCommunity } from "@/components/providers/CommunityProvider";
+
 type Props = {
   ratingChanges: Record<string, number>;
   profileNames: Record<string, string>;
@@ -27,11 +31,13 @@ function TeamColumn({
   label,
   ratingChanges,
   profileNames,
+  fallbackName,
 }: {
   ids: string[];
   label: string;
   ratingChanges: Record<string, number>;
   profileNames: Record<string, string>;
+  fallbackName: string;
 }) {
   return (
     <div>
@@ -39,7 +45,7 @@ function TeamColumn({
       <div className="space-y-1">
         {ids.map((id) => (
           <div key={id} className="flex items-center justify-between gap-2 text-sm">
-            <span className="truncate text-zinc-300">{profileNames[id] ?? "Jugador"}</span>
+            <span className="truncate text-zinc-300">{profileNames[id] ?? fallbackName}</span>
             <DeltaText delta={ratingChanges[id]} />
           </div>
         ))}
@@ -55,6 +61,9 @@ export function MatchParticipantPoints({
   team2Ids,
   compact = false,
 }: Props) {
+  const { translate: tr } = useCommunity();
+  const fallbackName = tr("player");
+
   if (!Object.keys(ratingChanges).length) return null;
 
   if (compact) {
@@ -80,15 +89,17 @@ export function MatchParticipantPoints({
     <div className="mt-3 grid grid-cols-2 gap-4 border-t border-border-subtle pt-3">
       <TeamColumn
         ids={team1Ids}
-        label="Equipo 1 (izq)"
+        label={tr("team1")}
         ratingChanges={ratingChanges}
         profileNames={profileNames}
+        fallbackName={fallbackName}
       />
       <TeamColumn
         ids={team2Ids}
-        label="Equipo 2 (der)"
+        label={tr("team2")}
         ratingChanges={ratingChanges}
         profileNames={profileNames}
+        fallbackName={fallbackName}
       />
     </div>
   );

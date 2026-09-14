@@ -5,6 +5,7 @@ import { getRatingHistory } from "@/lib/actions/rating-history";
 import { getLeaderboard } from "@/lib/actions/ranking";
 import { getViewablePlayer } from "@/lib/actions/player-profile";
 import { getCommunityBySlug } from "@/lib/community/context";
+import { getCommunityLocale } from "@/lib/community/locale";
 import { communityPath } from "@/lib/community/paths";
 import { PlayerProfileView } from "@/components/PlayerProfileView";
 import { AppHeader } from "@/components/AppHeader";
@@ -18,6 +19,7 @@ export default async function PerfilAjenoPage({ params }: Props) {
   const { community: communitySlug, id } = await params;
   const community = await getCommunityBySlug(communitySlug);
   if (!community) notFound();
+  const locale = getCommunityLocale(communitySlug);
 
   const [resolved, currentUser, entries] = await Promise.all([
     getViewablePlayer(id),
@@ -71,6 +73,7 @@ export default async function PerfilAjenoPage({ params }: Props) {
         showPlayerSearch
         showBadges={community.settings.show_badges}
         communitySlug={communitySlug}
+        locale={locale}
       />
     </div>
   );

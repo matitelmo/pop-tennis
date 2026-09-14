@@ -7,7 +7,11 @@ import { communityPath } from "@/lib/community/paths";
 import { MatchWizard } from "@/components/MatchWizard";
 import { PendingMatchesBanner } from "@/components/PendingMatchesBanner";
 import { AppHeader } from "@/components/AppHeader";
-import { hasActiveSubscription } from "@/lib/subscription";
+import {
+  SUBSCRIPTION_GATES_ENABLED,
+  canUseCommunityFeatures,
+  isSubscriptionRequired,
+} from "@/lib/subscription";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -26,8 +30,7 @@ export default async function PartidoPage({ params }: Props) {
   const member = await getCommunityMember(community.id, profile.id);
   if (!member) redirect(communityPath(communitySlug, "ranking"));
 
-  const requiresSub = community.settings.requires_subscription;
-  const canLog = !requiresSub || hasActiveSubscription(member);
+  const canLog = canUseCommunityFeatures(community.settings, member);
   const isInstant = community.settings.match_confirmation === "instant";
 
   const [pending, profiles] = await Promise.all([
@@ -52,7 +55,7 @@ export default async function PartidoPage({ params }: Props) {
         }
       />
 
-      {requiresSub && !canLog && (
+      {SUBSCRIPTION_GATES_ENABLED && isSubscriptionRequired(community.settings) && !canLog && (
         <Card className="mb-6 border-accent/30 p-4">
           <p className="text-sm text-zinc-300">
             Necesitás suscripción activa para registrar partidos oficiales.

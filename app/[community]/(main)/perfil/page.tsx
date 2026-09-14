@@ -18,7 +18,12 @@ import { getCommunityBySlug, getCommunityMember, getUserCommunities } from "@/li
 import { getCommunityLocale } from "@/lib/community/locale";
 import { communityPath } from "@/lib/community/paths";
 import { getSkillLabelLocalized, t } from "@/lib/i18n/messages";
-import { hasActiveSubscription, subscriptionLabel as subLabel } from "@/lib/subscription";
+import {
+  SUBSCRIPTION_GATES_ENABLED,
+  canUseCommunityFeatures,
+  isSubscriptionRequired,
+  subscriptionLabel as subLabel,
+} from "@/lib/subscription";
 import { getAvatarColor, getInitials } from "@/lib/utils";
 import { ProfileStatsSection } from "@/components/ProfileStatsSection";
 import { PlayerSearchList } from "@/components/PlayerSearchList";
@@ -54,14 +59,14 @@ export default async function PerfilPage({ params }: Props) {
   const entries = await getLeaderboard({ communitySlug });
   const myEntry = entries.find((e) => e.id === profile.id);
   const rank = entries.findIndex((e) => e.id === profile.id) + 1;
-  const canUsePaidFeatures =
-    !community.settings.requires_subscription || hasActiveSubscription(member);
+  const canUsePaidFeatures = canUseCommunityFeatures(community.settings, member);
 
   return (
-    <div className="space-y-6">
+    <div className="app-page">
       <AppHeader
         title={t(locale, "myProfile")}
         subtitle={community.name}
+        sticky
         action={
           <form action={logout}>
             <Button type="submit" variant="ghost" size="sm" className="min-w-[44px] px-2">
@@ -71,6 +76,8 @@ export default async function PerfilPage({ params }: Props) {
         }
       />
 
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr] lg:items-start lg:gap-8">
+        <div className="space-y-6">
       {userCommunities.length > 1 && (
         <Card className="p-4">
           <p className="text-sm text-zinc-400">{t(locale, "yourCommunities")}</p>
@@ -99,7 +106,7 @@ export default async function PerfilPage({ params }: Props) {
           {getInitials(profile.full_name)}
         </div>
         <h2 className="mt-4 text-title">{profile.full_name}</h2>
-        {myEntry?.isGhost && (
+        {community.settings.show_badges && myEntry?.isGhost && (
           <div className="mt-2 flex justify-center">
             <GhostBadge />
           </div>
@@ -111,7 +118,7 @@ export default async function PerfilPage({ params }: Props) {
           </p>
         )}
         <ProfileRating rating={member.rating} />
-        {community.settings.requires_subscription && (
+        {SUBSCRIPTION_GATES_ENABLED && isSubscriptionRequired(community.settings) && (
           <p className="mt-1 text-caption">{subLabel(member.subscription_status)}</p>
         )}
         {rank > 0 && (
@@ -125,7 +132,9 @@ export default async function PerfilPage({ params }: Props) {
             <StreakIcons streak={myEntry.streak} />
           </div>
         )}
-        {community.settings.requires_subscription && !canUsePaidFeatures && (
+        {SUBSCRIPTION_GATES_ENABLED &&
+          isSubscriptionRequired(community.settings) &&
+          !canUsePaidFeatures && (
           <Link href={communityPath(communitySlug, "subscribe")} className="mt-4 block">
             <Button size="sm" className="w-full">
               {t(locale, "activateSubscription")}
@@ -148,10 +157,17 @@ export default async function PerfilPage({ params }: Props) {
           />
         </>
       )}
+        </div>
 
+        <div className="space-y-6">
       <RatingChart points={ratingHistory} />
 
-      <ProfileStatsSection userId={profile.id} possessive="tuyo" communitySlug={communitySlug} />
+      <ProfileStatsSection
+        userId={profile.id}
+        possessive="tuyo"
+        communitySlug={communitySlug}
+        locale={locale}
+      />
 
       <MyRecordSection
         items={personalHistory.items}
@@ -173,7 +189,7 @@ export default async function PerfilPage({ params }: Props) {
         }))}
         excludeId={profile.id}
         title={t(locale, "viewProfileOf")}
-        canChallenge={canUsePaidFeatures && community.settings.requires_subscription}
+        canChallenge={canUsePaidFeatures}
         communitySlug={communitySlug}
       />
 
@@ -183,6 +199,8 @@ export default async function PerfilPage({ params }: Props) {
       >
         {t(locale, "rulesAndRanking")}
       </Link>
+        </div>
+      </div>
     </div>
   );
 }

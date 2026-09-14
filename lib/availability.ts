@@ -1,4 +1,5 @@
 import type { Availability } from "@/types/database";
+import type { CommunityLocale } from "@/lib/community/locale";
 
 export const AVAILABILITY_DAYS = [
   { key: "mon", label: "Lun" },
@@ -10,11 +11,26 @@ export const AVAILABILITY_DAYS = [
   { key: "sun", label: "Dom" },
 ] as const;
 
+/** Hour slots from 7:00 through 20:00 (inclusive), one hour each. */
+export const AVAILABILITY_HOURS = Array.from({ length: 14 }, (_, i) => i + 7);
+
+export const AVAILABILITY_HOUR_KEYS = AVAILABILITY_HOURS.map(String);
+
+/** @deprecated Legacy blocks — kept for reading old saved data. */
 export const AVAILABILITY_BLOCKS = [
   { key: "am", label: "Mañana" },
   { key: "pm", label: "Tarde" },
   { key: "eve", label: "Noche" },
 ] as const;
+
+export function formatAvailabilityHour(hour: number, locale: CommunityLocale): string {
+  if (locale === "en") {
+    if (hour === 12) return "12 PM";
+    if (hour < 12) return `${hour} AM`;
+    return `${hour - 12} PM`;
+  }
+  return `${hour}:00`;
+}
 
 export function hasAvailabilityOverlap(a: Availability | null, b: Availability | null): boolean {
   if (!a || !b) return false;

@@ -11,7 +11,7 @@ import {
   computeWeeklyPairings,
   getCooldownWeekStarts,
 } from "@/lib/weekly-match";
-import { hasActiveSubscription } from "@/lib/subscription";
+import { hasActiveSubscription, isSubscriptionRequired } from "@/lib/subscription";
 import type { Profile } from "@/types/database";
 
 export type WeeklyMatchAssignment = {
@@ -73,7 +73,7 @@ export async function setWeeklyOptIn(
 
   if (!member) return { success: false, error: "No sos miembro de esta comunidad" };
 
-  if (community.settings.requires_subscription && !hasActiveSubscription(member)) {
+  if (isSubscriptionRequired(community.settings) && !hasActiveSubscription(member)) {
     return { success: false, error: "Necesitás suscripción activa para el rival semanal" };
   }
 

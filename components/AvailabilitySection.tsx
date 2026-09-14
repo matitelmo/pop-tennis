@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { getDayLabels, getBlockLabels } from "@/lib/i18n/messages";
+import { getDayLabels, getHourLabels } from "@/lib/i18n/messages";
 import { updateAvailability } from "@/lib/actions/availability";
+import { ScheduleChip } from "@/components/ScheduleChip";
 import { useCommunity } from "@/components/providers/CommunityProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { cn } from "@/lib/utils";
 import type { Availability } from "@/types/database";
 
 type Props = {
@@ -23,15 +23,15 @@ export function AvailabilitySection({ initial, canEdit, communitySlug: slugProp 
   const [saved, setSaved] = useState(false);
 
   const days = getDayLabels(locale);
-  const blocks = getBlockLabels(locale);
+  const hours = getHourLabels(locale);
 
-  function toggle(day: string, block: string) {
+  function toggle(day: string, hour: string) {
     if (!canEdit) return;
     setAvailability((prev) => {
-      const dayBlocks = prev[day] ?? [];
-      const next = dayBlocks.includes(block)
-        ? dayBlocks.filter((b) => b !== block)
-        : [...dayBlocks, block];
+      const dayHours = prev[day] ?? [];
+      const next = dayHours.includes(hour)
+        ? dayHours.filter((h) => h !== hour)
+        : [...dayHours, hour];
       return { ...prev, [day]: next };
     });
     setSaved(false);
@@ -56,34 +56,24 @@ export function AvailabilitySection({ initial, canEdit, communitySlug: slugProp 
     <Card className="p-4">
       <h3 className="font-bold text-white">{tr("whenCanYouPlay")}</h3>
       <p className="mt-1 text-caption">{tr("availabilityHint")}</p>
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 space-y-4">
         {days.map((day) => (
           <div key={day.key}>
-            <p className="mb-1 text-xs font-bold text-zinc-500">{day.label}</p>
-            <div className="flex flex-wrap gap-2">
-              {blocks.map((block) => {
-                const active = (availability[day.key] ?? []).includes(block.key);
-                return (
-                  <button
-                    key={block.key}
-                    type="button"
-                    onClick={() => toggle(day.key, block.key)}
-                    className={cn(
-                      "rounded-full px-3 py-1.5 text-xs font-bold",
-                      active
-                        ? "bg-accent text-accent-foreground"
-                        : "bg-surface-glass text-zinc-400"
-                    )}
-                  >
-                    {block.label}
-                  </button>
-                );
-              })}
+            <p className="mb-2 text-xs font-bold text-zinc-500">{day.label}</p>
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5">
+              {hours.map((hour) => (
+                <ScheduleChip
+                  key={hour.key}
+                  label={hour.label}
+                  active={(availability[day.key] ?? []).includes(hour.key)}
+                  onClick={() => toggle(day.key, hour.key)}
+                />
+              ))}
             </div>
           </div>
         ))}
       </div>
-      <Button type="button" className="mt-4 w-full" size="sm" disabled={saving} onClick={save}>
+      <Button type="button" className="mt-4 w-full" size="md" disabled={saving} onClick={save}>
         {saving ? tr("saving") : saved ? tr("saved") : tr("saveAvailability")}
       </Button>
     </Card>

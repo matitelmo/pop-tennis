@@ -14,6 +14,7 @@ import type { PendingMatch } from "@/lib/actions/match";
 import type { Profile } from "@/types/database";
 import type { CommunitySettings } from "@/lib/community/settings";
 import { communityPath } from "@/lib/community/paths";
+import { useCommunity } from "@/components/providers/CommunityProvider";
 
 type Props = {
   communitySlug: string;
@@ -48,6 +49,7 @@ export function RankingSidebar({
   canUsePaidFeatures,
   isLoggedIn,
 }: Props) {
+  const { translate: tr } = useCommunity();
   const activityPreview = activity.slice(0, 5);
 
   if (!isLoggedIn) return null;
@@ -77,11 +79,11 @@ export function RankingSidebar({
 
       {!weekly.userPlayedThisWeek && canUsePaidFeatures && (
         <Card variant="interactive">
-          <p className="text-sm font-bold text-white">¿Armamos un partido?</p>
-          <p className="mt-1 text-caption">Meta: 1 partido por semana.</p>
+          <p className="text-sm font-bold text-white">{tr("scheduleMatch")}</p>
+          <p className="mt-1 text-caption">{tr("weeklyGoal")}</p>
           <Link href={communityPath(communitySlug, "partido")} className="mt-3 block">
             <Button className="w-full" size="md">
-              Cargar partido
+              {tr("logMatch")}
             </Button>
           </Link>
         </Card>
@@ -94,24 +96,24 @@ export function RankingSidebar({
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wide text-zinc-400">
-            Actividad reciente
+            {tr("recentActivity")}
           </h2>
           {activity.length > 0 && (
             <Link
               href={communityPath(communitySlug, "historial")}
               className="text-xs font-bold text-accent"
             >
-              Ver todo →
+              {tr("seeAll")}
             </Link>
           )}
         </div>
         {activityPreview.length === 0 ? (
           <Card>
-            <p className="text-center text-caption">Todavía no hay actividad en la liga.</p>
+            <p className="text-center text-caption">{tr("noActivity")}</p>
             {canUsePaidFeatures && (
               <Link href={communityPath(communitySlug, "partido")} className="mt-3 block">
                 <Button variant="secondary" className="w-full" size="sm">
-                  Cargar partido
+                  {tr("logMatch")}
                 </Button>
               </Link>
             )}

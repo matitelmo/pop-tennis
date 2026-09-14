@@ -4,11 +4,14 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { getProfileStats } from "@/lib/actions/profile-stats";
 import { communityPath } from "@/lib/community/paths";
+import type { CommunityLocale } from "@/lib/community/locale";
+import { t } from "@/lib/i18n/messages";
 
 type Props = {
   userId: string;
   possessive?: "tuyo" | "ajeno";
   communitySlug: string;
+  locale?: CommunityLocale;
 };
 
 function RecordLine({ wins, losses }: { wins: number; losses: number }) {
@@ -45,6 +48,7 @@ export async function ProfileStatsSection({
   userId,
   possessive = "ajeno",
   communitySlug,
+  locale = "es",
 }: Props) {
   const stats = await getProfileStats(userId);
   const isOwn = possessive === "tuyo";
@@ -52,21 +56,19 @@ export async function ProfileStatsSection({
   if (stats.totalConfirmedMatches === 0) {
     return (
       <Card>
-        <h3 className="font-bold text-white">Estadísticas</h3>
-        <p className="mt-2 text-caption">
-          Todavía no hay partidos confirmados para armar estadísticas.
-        </p>
+        <h3 className="font-bold text-white">{t(locale, "statsTitle")}</h3>
+        <p className="mt-2 text-caption">{t(locale, "statsNoMatches")}</p>
       </Card>
     );
   }
 
   return (
     <section className="space-y-3">
-      <h3 className="font-bold text-white">Estadísticas</h3>
+      <h3 className="font-bold text-white">{t(locale, "statsTitle")}</h3>
 
       <Card>
         <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
-          {isOwn ? "Con quién más jugaste" : "Con quién más jugó"}
+          {isOwn ? t(locale, "statsMostPlayedOwn") : t(locale, "statsMostPlayedOther")}
         </p>
         {stats.mostPlayedOpponent ? (
           <div className="mt-2">
@@ -83,13 +85,13 @@ export async function ProfileStatsSection({
             />
           </div>
         ) : (
-          <p className="mt-2 text-caption">Sin rivales todavía.</p>
+          <p className="mt-2 text-caption">{t(locale, "statsNoOpponentsYet")}</p>
         )}
       </Card>
 
       <Card>
         <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
-          {isOwn ? "Tus hijos" : "Sus hijos"}
+          {isOwn ? t(locale, "statsHijosOwn") : t(locale, "statsHijosOther")}
         </p>
         {stats.hijos.length ? (
           <div className="mt-2 space-y-2">
@@ -101,7 +103,7 @@ export async function ProfileStatsSection({
                 communitySlug={communitySlug}
                 suffix={
                   <div className="flex items-center gap-2">
-                    <Badge variant="accent">👑 Hijo</Badge>
+                    <Badge variant="accent">{t(locale, "statsHijoBadge")}</Badge>
                     <RecordLine wins={h.wins} losses={h.losses} />
                   </div>
                 }
@@ -110,16 +112,14 @@ export async function ProfileStatsSection({
           </div>
         ) : (
           <p className="mt-2 text-caption">
-            {isOwn
-              ? "Todavía no tenés paternidad clara con nadie (saldo +3)."
-              : "Todavía no tiene hijos en la banda (saldo +3)."}
+            {isOwn ? t(locale, "statsNoHijosOwn") : t(locale, "statsNoHijosOther")}
           </p>
         )}
       </Card>
 
       <Card>
         <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
-          {isOwn ? "Tus padres" : "Sus padres"}
+          {isOwn ? t(locale, "statsPadresOwn") : t(locale, "statsPadresOther")}
         </p>
         {stats.padres.length ? (
           <div className="mt-2 space-y-2">
@@ -131,7 +131,9 @@ export async function ProfileStatsSection({
                 communitySlug={communitySlug}
                 suffix={
                   <div className="flex items-center gap-2">
-                    <Badge variant="danger">{isOwn ? "Te domina" : "Lo domina"}</Badge>
+                    <Badge variant="danger">
+                      {isOwn ? t(locale, "statsDominatesYou") : t(locale, "statsDominatesThem")}
+                    </Badge>
                     <RecordLine wins={p.wins} losses={p.losses} />
                   </div>
                 }
@@ -140,16 +142,14 @@ export async function ProfileStatsSection({
           </div>
         ) : (
           <p className="mt-2 text-caption">
-            {isOwn
-              ? "Nadie te tiene de hijo todavía."
-              : "Nadie lo tiene de hijo todavía."}
+            {isOwn ? t(locale, "statsNoPadresOwn") : t(locale, "statsNoPadresOther")}
           </p>
         )}
       </Card>
 
       <Card>
         <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">
-          Compañero favorito
+          {t(locale, "statsFavoritePartner")}
         </p>
         {stats.favoritePartner ? (
           <div className="mt-2">
@@ -159,13 +159,14 @@ export async function ProfileStatsSection({
               communitySlug={communitySlug}
               suffix={
                 <span className="text-caption">
-                  {stats.favoritePartner.matches} partidos · {stats.favoritePartner.winRate}% W
+                  {stats.favoritePartner.matches} {t(locale, "statsPartnerRecord")} ·{" "}
+                  {stats.favoritePartner.winRate}% W
                 </span>
               }
             />
           </div>
         ) : (
-          <p className="mt-2 text-caption">Sin pareja de dobles todavía.</p>
+          <p className="mt-2 text-caption">{t(locale, "statsNoPartnerYet")}</p>
         )}
       </Card>
     </section>

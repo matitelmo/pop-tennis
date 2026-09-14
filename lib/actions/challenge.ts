@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { getCommunityBySlug, getCommunityMember } from "@/lib/community/context";
 import { revalidateCommunityPaths } from "@/lib/community/paths";
 import { getCurrentUserProfile, getUserEmail } from "@/lib/actions/auth";
-import { hasActiveSubscription } from "@/lib/subscription";
+import { hasActiveSubscription, isSubscriptionRequired } from "@/lib/subscription";
 import { sendChallengeEmail } from "@/lib/email/send";
 import { getCommunityLocale } from "@/lib/community/locale";
 
@@ -29,7 +29,7 @@ export async function sendChallenge(
   const member = await getCommunityMember(community.id, user.id);
   if (!member) return { success: false, error: "No sos miembro de esta comunidad" };
 
-  if (community.settings.requires_subscription && !hasActiveSubscription(member)) {
+  if (isSubscriptionRequired(community.settings) && !hasActiveSubscription(member)) {
     return { success: false, error: "Necesitás suscripción activa para desafiar jugadores" };
   }
 
